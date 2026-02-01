@@ -371,36 +371,39 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-white">
-            {/* Header - Now Minimal & Light */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-200">
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-zinc-950 font-sans selection:bg-purple-500/30">
+            {/* Header - Glassmorphism & Cinematic */}
+            <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
+                <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-900/40 ring-1 ring-white/10">
                         <Sparkles className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h2 className="font-bold text-gray-900 leading-tight">AI Director</h2>
-                        <p className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full w-fit">Interactive Studio Pro</p>
+                        <h2 className="font-bold text-lg text-white tracking-tight">AI Director</h2>
+                        <p className="text-[11px] font-medium text-purple-300/80 uppercase tracking-wider">Cinematic Studio Pro</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="hidden md:flex gap-2 border-gray-200 hover:bg-gray-50 text-gray-700"
+                        className="hidden md:flex gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-all duration-300"
                         disabled={!finalPlan}
                         onClick={handleFinalizeProject}
                     >
-                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
-                        {finalPlan ? "Export Project" : "Planning..."}
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-purple-400" /> : <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />}
+                        {finalPlan ? "Export Project" : "Waiting for Plan..."}
                     </Button>
                 </div>
             </div>
 
-            {/* Chat Area - Full Width & Light */}
-            <div className="flex-1 overflow-hidden relative bg-gray-50/50">
-                <ScrollArea className="h-full px-4 md:px-[10%] py-6">
-                    <div className="max-w-4xl mx-auto flex flex-col gap-6 pb-32">
+            {/* Chat Area - Immersive Dark */}
+            <div className="flex-1 overflow-hidden relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black">
+                {/* Ambient Background Glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none" />
+
+                <ScrollArea className="h-full px-4 md:px-[10%] py-8">
+                    <div className="max-w-5xl mx-auto flex flex-col gap-8 pb-40">
                         {messages.map((msg, idx) => (
                             <div
                                 key={msg.id || idx}
@@ -410,24 +413,26 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                 )}
                             >
                                 <Avatar className={cn(
-                                    "w-8 h-8 mt-1 border shadow-sm",
-                                    msg.role === 'ai' ? "border-purple-100 bg-purple-50" : "border-gray-100 bg-gray-100"
+                                    "w-10 h-10 mt-1 border border-white/10 ring-2 ring-black",
+                                    msg.role === 'ai' ? "bg-purple-900/20" : "bg-zinc-800"
                                 )}>
                                     {msg.role === 'assistant' ? (
-                                        <div className="flex items-center justify-center text-xs font-bold text-purple-600">AI</div>
+                                        <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-indigo-600">
+                                            <Sparkles className="w-5 h-5 text-white" />
+                                        </div>
                                     ) : (
-                                        <div className="flex items-center justify-center text-xs font-bold text-gray-600">ME</div>
+                                        <div className="flex items-center justify-center w-full h-full bg-zinc-800 text-zinc-400 font-medium text-xs">YOU</div>
                                     )}
                                 </Avatar>
 
                                 <div className={cn(
-                                    "p-4 rounded-2xl shadow-sm text-sm leading-relaxed",
+                                    "p-6 rounded-3xl text-[15px] leading-relaxed backdrop-blur-sm border transition-all duration-300",
                                     msg.role === 'user'
-                                        ? "bg-gray-900 text-white rounded-tr-sm"
-                                        : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"
+                                        ? "bg-zinc-800/80 text-zinc-100 rounded-tr-sm border-zinc-700/50 shadow-xl"
+                                        : "bg-white/5 text-zinc-300 border-white/5 rounded-tl-sm shadow-2xl hover:border-white/10 hover:bg-white/10"
                                 )}>
                                     {/* Render Text */}
-                                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                                    <div className="whitespace-pre-wrap font-light tracking-wide">{msg.content}</div>
 
                                     {/* Hero Shot Display & Progress */}
                                     {(
@@ -438,23 +443,26 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                                 <p className="text-sm font-semibold mb-2 text-gray-700">Hero Shot (Karakter/Mekan)</p>
 
                                                 {generatingImages.hero_shot === 'processing' && !(msg.content as any).hero_shot_url ? (
-                                                    <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
-                                                        <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-2" />
-                                                        <p className="text-sm text-purple-700 font-medium">Oluşturuluyor...</p>
-                                                        <p className="text-xs text-purple-500">Karakter ve atmosfer tasarlanıyor</p>
+                                                    <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20 relative overflow-hidden group">
+                                                        <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-transparent opacity-50" />
+                                                        <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-3 relative z-10" />
+                                                        <p className="text-sm text-purple-300 font-medium relative z-10 animate-pulse">Designing Hero Shot...</p>
+                                                        <p className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Render Engine Active</p>
                                                     </div>
                                                 ) : (
                                                     <img
                                                         src={(msg.content as any).hero_shot_url || generatedImages.hero_shot}
                                                         alt="Hero Shot"
-                                                        className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
+                                                        className="rounded-xl border border-white/10 shadow-2xl w-full animate-in fade-in zoom-in-95 duration-700 hover:scale-[1.01] transition-transform cursor-pointer"
                                                     />
                                                 )}
 
                                                 {generatingImages.hero_shot === 'failed' && (
-                                                    <div className="w-full p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm flex items-center gap-2">
-                                                        <X className="w-4 h-4" />
-                                                        Hero Shot oluşturulamadı.
+                                                    <div className="w-full p-4 bg-red-900/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3">
+                                                        <div className="p-1.5 bg-red-500/10 rounded-full">
+                                                            <X className="w-4 h-4" />
+                                                        </div>
+                                                        Hero Shot render failed. Please try again.
                                                     </div>
                                                 )}
                                             </div>
@@ -473,15 +481,15 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                                         <p className="text-xs font-medium mb-2 text-gray-500">Start Frame</p>
 
                                                         {generatingImages.hero_plus_start === 'processing' && !((msg.content as any).hero_plus_frames?.start) ? (
-                                                            <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
-                                                                <Loader2 className="w-6 h-6 text-purple-600 animate-spin mb-1" />
-                                                                <p className="text-xs text-purple-600">Oluşturuluyor...</p>
+                                                            <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20">
+                                                                <Loader2 className="w-6 h-6 text-purple-500 animate-spin mb-2" />
+                                                                <p className="text-[10px] text-purple-300/70 uppercase tracking-widest">Rendering Start</p>
                                                             </div>
                                                         ) : (
                                                             <img
                                                                 src={(msg.content as any).hero_plus_frames?.start || generatedImages.hero_plus_start}
                                                                 alt="Start Frame"
-                                                                className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
+                                                                className="rounded-xl border border-white/10 shadow-lg w-full animate-in fade-in zoom-in-95 duration-700"
                                                             />
                                                         )}
                                                     </div>
@@ -491,15 +499,15 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                                         <p className="text-xs font-medium mb-2 text-gray-500">End Frame</p>
 
                                                         {generatingImages.hero_plus_end === 'processing' && !((msg.content as any).hero_plus_frames?.end) ? (
-                                                            <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
-                                                                <Loader2 className="w-6 h-6 text-purple-600 animate-spin mb-1" />
-                                                                <p className="text-xs text-purple-600">Oluşturuluyor...</p>
+                                                            <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20">
+                                                                <Loader2 className="w-6 h-6 text-purple-500 animate-spin mb-2" />
+                                                                <p className="text-[10px] text-purple-300/70 uppercase tracking-widest">Rendering End</p>
                                                             </div>
                                                         ) : (
                                                             <img
                                                                 src={(msg.content as any).hero_plus_frames?.end || generatedImages.hero_plus_end}
                                                                 alt="End Frame"
-                                                                className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
+                                                                className="rounded-xl border border-white/10 shadow-lg w-full animate-in fade-in zoom-in-95 duration-700"
                                                             />
                                                         )}
                                                     </div>
@@ -511,8 +519,8 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                     {msg.type === 'image' && msg.mediaUrls && (
                                         <div className="mt-3 flex flex-wrap gap-2 md:max-w-xl">
                                             {msg.mediaUrls.map((url: string, i: number) => (
-                                                <div key={i} className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 shadow-sm relative group">
-                                                    <img src={url} alt={`Upload ${i}`} className="w-full h-full object-cover" />
+                                                <div key={i} className="w-24 h-24 rounded-lg overflow-hidden border border-white/10 shadow-sm relative group bg-zinc-900">
+                                                    <img src={url} alt={`Upload ${i}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 </div>
                                             ))}
                                         </div>
@@ -520,17 +528,17 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
 
                                     {/* Render AI Attachments (Plan/Spec Card) */}
                                     {msg.role === 'ai' && msg.projectPlan && (
-                                        <div className="mt-4 p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+                                        <div className="mt-4 p-4 bg-purple-900/10 rounded-xl border border-purple-500/20 backdrop-blur-sm">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <div className="p-1 rounded bg-purple-100 text-purple-600">
-                                                    <Download className="w-3 h-3" />
+                                                <div className="p-1.5 rounded bg-purple-500/10 text-purple-400">
+                                                    <Download className="w-3.5 h-3.5" />
                                                 </div>
-                                                <span className="font-semibold text-gray-900">Project Plan Generated</span>
+                                                <span className="font-semibold text-zinc-100 text-sm">Project Plan Generated</span>
                                             </div>
-                                            <div className="text-xs text-gray-500 mb-3">
+                                            <div className="text-xs text-zinc-400 mb-3 ml-7">
                                                 Includes visual direction, key shots, and technical specs.
                                             </div>
-                                            <Button size="sm" className="w-full bg-white text-purple-700 border border-purple-200 hover:bg-purple-50 shadow-sm">
+                                            <Button size="sm" className="w-full bg-white/5 text-purple-300 border border-white/10 hover:bg-white/10 hover:text-white shadow-sm transition-all ml-0">
                                                 View Full Plan
                                             </Button>
                                         </div>
@@ -542,21 +550,21 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                         <div className="mt-4 space-y-3">
                                             {/* Spec Card */}
                                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className="p-2 bg-gray-50 rounded border border-gray-100">
-                                                    <div className="font-medium text-gray-500 mb-0.5">Camera</div>
-                                                    <div className="text-gray-900 font-semibold">{msg.specs.camera}</div>
+                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Camera</div>
+                                                    <div className="text-zinc-200 font-medium">{msg.specs.camera}</div>
                                                 </div>
-                                                <div className="p-2 bg-gray-50 rounded border border-gray-100">
-                                                    <div className="font-medium text-gray-500 mb-0.5">Lens</div>
-                                                    <div className="text-gray-900 font-semibold">{msg.specs.lens}</div>
+                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Lens</div>
+                                                    <div className="text-zinc-200 font-medium">{msg.specs.lens}</div>
                                                 </div>
-                                                <div className="p-2 bg-gray-50 rounded border border-gray-100">
-                                                    <div className="font-medium text-gray-500 mb-0.5">Lighting</div>
-                                                    <div className="text-gray-900 font-semibold">{msg.specs.lighting}</div>
+                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Lighting</div>
+                                                    <div className="text-zinc-200 font-medium">{msg.specs.lighting}</div>
                                                 </div>
-                                                <div className="p-2 bg-gray-50 rounded border border-gray-100">
-                                                    <div className="font-medium text-gray-500 mb-0.5">Mood</div>
-                                                    <div className="text-gray-900 font-semibold">{msg.specs.mood}</div>
+                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Mood</div>
+                                                    <div className="text-zinc-200 font-medium">{msg.specs.mood}</div>
                                                 </div>
                                             </div>
 
@@ -565,17 +573,17 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                                 <Button
                                                     onClick={() => handleGeneratePreview(msg.id!, recentPrompt, msg.specs)}
                                                     size="sm"
-                                                    className="w-full bg-gray-900 text-white hover:bg-gray-800 shadow-sm gap-2"
+                                                    className="w-full bg-gradient-to-r from-zinc-800 to-zinc-900 text-zinc-300 border border-white/5 hover:border-purple-500/50 hover:text-white hover:from-purple-900/20 hover:to-indigo-900/20 shadow-lg shadow-black/50 gap-2 transition-all duration-300"
                                                     disabled={isGeneratingPreview === msg.id}
                                                 >
                                                     {isGeneratingPreview === msg.id ? (
                                                         <>
-                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
                                                             Rendering Studio Preview...
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                                                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                                                             Generate Visual Preview
                                                         </>
                                                     )}
@@ -584,7 +592,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
 
                                             {/* Preview Result */}
                                             {msg.previewUrl && (
-                                                <div className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-md">
+                                                <div className="relative group rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black">
                                                     <MediaPreview
                                                         src={msg.previewUrl}
                                                         type="image"
