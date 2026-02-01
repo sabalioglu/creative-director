@@ -472,6 +472,23 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                             </div>
                         </div>
 
+                        {/* Image Previews */}
+                        {uploadedImages.length > 0 && (
+                            <div className="flex gap-2 justify-center mb-2 animate-in fade-in slide-in-from-bottom-2">
+                                {uploadedImages.map((img, idx) => (
+                                    <div key={idx} className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 shadow-sm group/preview">
+                                        <img src={img} alt="Upload" className="w-full h-full object-cover" />
+                                        <button
+                                            onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== idx))}
+                                            className="absolute top-0.5 right-0.5 bg-black/50 hover:bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/preview:opacity-100 transition-all backdrop-blur-sm"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="relative group bg-white rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] border border-gray-200 transition-all duration-300 focus-within:ring-4 focus-within:ring-purple-500/10 focus-within:border-purple-200 pl-4 pr-2 py-2 flex items-center gap-2 hover:shadow-[0_20px_50px_-5px_rgba(124,58,237,0.15)]">
                             <label className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-purple-600 transition-colors cursor-pointer group-hover:scale-105">
                                 <Paperclip className="w-5 h-5" />
