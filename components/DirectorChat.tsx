@@ -135,6 +135,42 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         scrollToBottom()
     }, [messages])
 
+    // --- SEQUENTIAL WORKFLOW TRIGGER ---
+    // Watch for Hero Shot success to trigger Hero+ (Product Integration)
+    useEffect(() => {
+        if (generatedImages.hero_shot && !generatingImages.hero_plus_start) {
+            // Hero Shot is ready! Now let's trigger Hero+
+            // 1. Find the Product Image (from the last user message with images)
+            const lastUserMsgWithImg = [...messages].reverse().find(m => m.role === 'user' && m.mediaUrls && m.mediaUrls.length > 0);
+            const productImageUrl = lastUserMsgWithImg?.mediaUrls?.[0];
+
+            if (productImageUrl) {
+                console.log("🚀 Hero Shot Ready. Triggering Hero+ with Product Integration...");
+                setGeneratingImages(prev => ({ ...prev, hero_plus_start: 'processing' }));
+
+                fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        action: "generate_image",
+                        prompt: recentPrompt + " holding product, cinematic composition", // Append context for product
+                        specs: manualSpecs,
+                        settings: genSettings,
+                        sessionId: sessionId,
+                        taskType: "hero_plus_start",
+                        // CRITICAL: Pass BOTH the Hero Shot (Context) and Product Image (Subject)
+                        image_urls: [generatedImages.hero_shot, productImageUrl]
+                    })
+                }).catch(e => console.error("Hero+ trigger failed", e));
+            } else {
+                console.log("⚠️ Hero Shot Ready, but no Product Image found for Hero+.");
+            }
+        }
+    }, [generatedImages.hero_shot, generatingImages.hero_plus_start, messages, sessionId, manualSpecs, genSettings, recentPrompt]);
+
     const handleFinalizeProject = () => {
         setIsProcessing(true)
         setTimeout(() => {
@@ -176,18 +212,50 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
             const data = await response.json()
             if (data.error) throw new Error(data.error)
 
-            let messageContent = data.content;
-            if (typeof data.content === 'object') {
-                if (data.content.specs) setManualSpecs((prev: any) => ({ ...prev, ...data.content.specs }))
-                messageContent = data.content.message || data.content.response || JSON.stringify(data.content);
+            const content = data.content;
+            let messageContent = content;
+            let assistantMsgId = crypto.randomUUID();
+
+            if (typeof content === 'object') {
+                if (content.specs) setManualSpecs((prev: any) => ({ ...prev, ...content.specs }))
+                messageContent = content.message || content.response || JSON.stringify(content);
+
+                // --- AUTO-TRIGGER HERO SHOT ---
+                if (content.ready_for_hero_shot) {
+                    // Set loading state immediately so UI shows "Rendering..."
+                    setGeneratingImages(prev => ({ ...prev, hero_shot: 'processing' }));
+
+                    // Trigger backend generation without awaiting (fire and forget - realtime will update)
+                    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({
+                            action: "generate_image", // Using specific action for tasks
+                            prompt: content.refined_prompt || input, // Use the refined prompt from AI
+                            specs: content.specs || manualSpecs,
+                            settings: genSettings,
+                            sessionId: currentSessionId,
+                            taskType: "hero_shot",
+                            image_urls: [] // EMPTY for Hero Shot (Scene Only - Step 1)
+                        })
+                    }).then(async (res) => {
+                        if (!res.ok) console.error("Auto-gen failed", await res.text());
+                    }).catch(e => console.error("Auto-gen error", e));
+                }
             }
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: messageContent,
-                id: crypto.randomUUID(),
-                storyboard: data.content.storyboard
+                id: assistantMsgId,
+                storyboard: content.storyboard,
+                // If we triggered generation, attach the processing state implicitly via the messages rendering logic
+                // But we can also pass a flag if needed. The current UI relies on generatingImages state.
             }])
+
             if (uploadedImages.length > 0) setUploadedImages([])
 
         } catch (error) {
