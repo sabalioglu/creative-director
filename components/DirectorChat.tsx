@@ -420,7 +420,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                 </Avatar>
 
                                 <div className={cn(
-                                    "p-6 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 shadow-sm",
+                                    "p-5 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 shadow-sm",
                                     msg.role === 'user'
                                         ? "bg-white text-gray-800 rounded-tr-sm border border-gray-200 shadow-lg shadow-gray-200/50"
                                         : "bg-white/90 backdrop-blur-sm text-gray-700 border border-purple-100 rounded-tl-sm shadow-xl shadow-purple-500/5"
@@ -482,78 +482,12 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                 </ScrollArea>
 
                 {/* Input Area - Floating Capsule */}
-                <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 bg-gradient-to-t from-[#F8F9FB] via-[#F8F9FB]/95 to-transparent z-40">
+                <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 bg-gradient-to-t from-[#F8F9FB] via-[#F8F9FB]/95 to-transparent z-40">
                     <div className="max-w-4xl mx-auto relative flex flex-col gap-3">
                         {isLoading && (
                             <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-lg rounded-full text-xs font-bold text-gray-500 animate-in fade-in slide-in-from-bottom-2">
                                 <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
                                 DIRECTOR IS THINKING...
-                            </div>
-                        )}
-
-                        {/* Cinema Controls Toolbar */}
-                        <div className="flex justify-center animate-in slide-in-from-bottom-2 fade-in duration-500">
-                            <CinemaControls
-                                specs={manualSpecs}
-                                onSpecChange={(k, v) => setManualSpecs((prev: any) => ({ ...prev, [k]: v }))}
-                            />
-                        </div>
-
-                        {/* Generation Settings (Aspect Ratio & Resolution) */}
-                        <div className="flex items-center justify-center gap-4 animate-in slide-in-from-bottom-3 fade-in duration-700">
-                            {/* Aspect Ratio */}
-                            <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
-                                {['16:9', '9:16', '1:1'].map((ratio) => (
-                                    <button
-                                        key={ratio}
-                                        onClick={() => setGenSettings(prev => ({ ...prev, aspectRatio: ratio }))}
-                                        className={cn(
-                                            "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all",
-                                            genSettings.aspectRatio === ratio
-                                                ? "bg-white text-purple-700 shadow-sm ring-1 ring-purple-100"
-                                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                        )}
-                                    >
-                                        {ratio}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="h-4 w-px bg-gray-200" />
-
-                            {/* Resolution */}
-                            <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
-                                {['HD', '2K', '4K'].map((res) => (
-                                    <button
-                                        key={res}
-                                        onClick={() => setGenSettings(prev => ({ ...prev, resolution: res }))}
-                                        className={cn(
-                                            "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all",
-                                            genSettings.resolution === res
-                                                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
-                                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                        )}
-                                    >
-                                        {res}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Image Previews */}
-                        {uploadedImages.length > 0 && (
-                            <div className="flex gap-2 justify-center mb-2 animate-in fade-in slide-in-from-bottom-2">
-                                {uploadedImages.map((img, idx) => (
-                                    <div key={idx} className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 shadow-sm group/preview">
-                                        <img src={img} alt="Upload" className="w-full h-full object-cover" />
-                                        <button
-                                            onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== idx))}
-                                            className="absolute top-0.5 right-0.5 bg-black/50 hover:bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/preview:opacity-100 transition-all backdrop-blur-sm"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
                             </div>
                         )}
 
@@ -580,6 +514,59 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                 <Send className="w-4 h-4 ml-0.5" />
                             </Button>
                         </div>
+
+                        {/* Controls Toolbar - MOVED BELOW INPUT */}
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-3 px-2">
+                            {/* Cinema Controls */}
+                            <div className="scale-90 origin-left">
+                                <CinemaControls
+                                    specs={manualSpecs}
+                                    onSpecChange={(k, v) => setManualSpecs((prev: any) => ({ ...prev, [k]: v }))}
+                                />
+                            </div>
+
+                            {/* Generation Settings */}
+                            <div className="flex items-center gap-3 scale-90 origin-right">
+                                {/* Aspect Ratio */}
+                                <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
+                                    {['16:9', '9:16', '1:1'].map((ratio) => (
+                                        <button
+                                            key={ratio}
+                                            onClick={() => setGenSettings(prev => ({ ...prev, aspectRatio: ratio }))}
+                                            className={cn(
+                                                "px-2.5 py-1 rounded-full text-[9px] font-bold transition-all",
+                                                genSettings.aspectRatio === ratio
+                                                    ? "bg-white text-purple-700 shadow-sm ring-1 ring-purple-100"
+                                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                            )}
+                                        >
+                                            {ratio}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="h-3 w-px bg-gray-200" />
+
+                                {/* Resolution */}
+                                <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
+                                    {['HD', '2K', '4K'].map((res) => (
+                                        <button
+                                            key={res}
+                                            onClick={() => setGenSettings(prev => ({ ...prev, resolution: res }))}
+                                            className={cn(
+                                                "px-2.5 py-1 rounded-full text-[9px] font-bold transition-all",
+                                                genSettings.resolution === res
+                                                    ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                            )}
+                                        >
+                                            {res}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
 
                         <div className="mt-4 flex justify-center gap-6 text-[10px] font-black tracking-widest text-gray-400 uppercase opacity-60">
                             <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-purple-500" /> AI Powered</span>
