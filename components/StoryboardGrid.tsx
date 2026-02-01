@@ -252,7 +252,7 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                 return (
                                     <div key={`${f.frame_number}-${frameIdx}`} className="relative group">
                                         <Card className={cn(
-                                            "bg-zinc-900 border-zinc-800 overflow-hidden transition-all duration-500 hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-black/50",
+                                            "bg-black/40 border-white/5 backdrop-blur-xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_-5px_rgba(79,70,229,0.3)]",
                                             generatingIds.includes(f.frame_number) && "ring-2 ring-indigo-500/50 scale-[0.98]"
                                         )}>
                                             <div className="aspect-video bg-zinc-950 relative flex items-center justify-center overflow-hidden">
@@ -310,13 +310,15 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 )}
                                             </div>
 
-                                            <div className="p-4 space-y-3 bg-gradient-to-b from-zinc-900 to-zinc-950">
+                                            </div>
+
+                                            <div className="p-4 space-y-3 bg-gradient-to-b from-white/5 to-transparent border-t border-white/5">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex gap-2">
-                                                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] font-black uppercase tracking-tighter text-indigo-400 border border-zinc-700/50">
+                                                        <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-black uppercase tracking-tighter text-indigo-300 border border-white/10">
                                                             {f.shot_type}
                                                         </span>
-                                                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-500 border border-zinc-700/50">
+                                                        <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-500 border border-white/10">
                                                             {f.camera_angle}
                                                         </span>
                                                     </div>
@@ -328,13 +330,14 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 </p>
                                             </div>
                                         </Card>
-                                    </div>
-                                );
-                            })}
-                        </div>
                     </div>
-                ))}
+                );
+                            })}
             </div>
         </div>
+    ))
+}
+            </div >
+        </div >
     )
 }
