@@ -63,6 +63,19 @@ Deno.serve(async (req) => {
             const reply = await chatWithDirector(history || [], prompt || "", image_urls, reqBody.specs, reqBody.settings);
             const videoAnalysis = reqBody.settings?.videoAnalysis;
 
+            // AUTO HERO SHOT TRIGGER
+            if (reply.content.ready_for_hero_shot && !reply.content.hero_shot_url) {
+                console.log("Generating Hero Shot for:", reply.content.refined_prompt);
+                try {
+                    const heroImageUrl = await generateImage(reply.content.refined_prompt);
+                    reply.content.hero_shot_url = heroImageUrl;
+                    reply.content.message += `\n\n✨ İşte ilk sahnenin Hero Shot'ı! Bu karakterle devam edelim mi?`;
+                } catch (error) {
+                    console.error("Hero Shot generation failed:", error);
+                    reply.content.message += `\n\n(Hero Shot oluşturulamadı, ancak storyboard'a geçebiliriz.)`;
+                }
+            }
+
             // AUTO-STORYBOARD TRIGGER
             if (reply.content.ready_for_storyboard) {
                 console.log("Director is ready. Generating storyboard for:", reply.content.refined_prompt);
@@ -385,19 +398,25 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
     const audienceList = AUDIENCE_OPTIONS.map(a => `${a.label} (${a.description})`).join(", ");
 
     const systemPrompt = `ROLE: You are an expert AI Film Director and Creative Consultant for a high-end cinematic ad agency.
-  GOAL: Your objective is to INTERVIEW the user to define a Cinematic Video Ad. Do not just take orders; provide artistic guidance and lead the creative process.
+  GOAL: Your objective is to EFFICIENTLY gather essential information and CREATE visuals. Be decisive and action-oriented.
 
-  BEHAVIOR:
-  1. **Professional Dialogue**: Use a natural, friendly, and professional tone.
-  2. **Interrogative Approach**: Ask clarifying questions about Mood, Target Audience, or USP (Unique Selling Point). 
-  3. **One Question at a Time**: Never overwhelm the user. Ask only 1 or 2 targeted questions per response.
-  4. **Propose Ideas**: Suggest ad formulas like "Viral Hook", "Cinematic Journey", or "Product Hero" based on their inputs.
+  EFFICIENCY RULES:
+  1. **Maximum 3-4 Questions Total**: Ask only essential questions before generating Hero Shot.
+  2. **Never Repeat Questions**: If you already asked about atmosphere/mood/lighting, don't ask again.
+  3. **User Says "Sen Karar Ver"**: Make the decision immediately and proceed. DO NOT ask another question.
+  4. **Batch Questions**: Combine related questions into one message when possible.
   5. **Language Preference**: Always respond in the SAME language as the user. You are fully multilingual.
-  6. **Step-by-Step Workflow**:
-     - Step 1: Confirm Audience/Product Goal.
-     - Step 2: Define Vibe & Mood.
-     - Step 3: Suggest & Finalize HERO SHOT Specs (Camera, Lens, Lighting).
-     - Step 4: After Hero Shot confirmation, move to Storyboard.
+
+  WORKFLOW:
+  - **Step 1**: Gather essentials in 1-2 questions (audience, product, scenario idea).
+  - **Step 2**: If user provides scenario OR says "sen karar ver" → Set ready_for_hero_shot: true
+  - **Step 3**: After Hero Shot approval → Set ready_for_storyboard: true
+
+  DECISION TRIGGERS:
+  - User mentions specific scenario (e.g., "ofiste başlasın") → READY FOR HERO SHOT
+  - User says "sen karar ver", "buna sen karar ver", "aynen" → MAKE DECISION & PROCEED
+  - User provides visual tone (e.g., "soğuk mavi tonlar") → READY FOR HERO SHOT
+  - You have: audience + scenario + visual tone → READY FOR HERO SHOT
 
   PRESET OPTIONS (Use these labels in 'specs'):
   - Cameras: ${cameraList}
@@ -407,9 +426,10 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
 
   OUTPUT FORMAT: JSON ONLY.
   {
-    "message": "Write your conversational consultant response here. Keep it focused on the current interview step.",
+    "message": "Your conversational response. Be concise and action-oriented.",
+    "ready_for_hero_shot": boolean,
     "ready_for_storyboard": boolean,
-    "refined_prompt": "Midjourney-style prompt for the CURRENT shot only.",
+    "refined_prompt": "Detailed Midjourney-style prompt for the CURRENT shot.",
     "specs": { "camera": "", "lens": "", "lighting": "", "mood": "", "audience": "" }
   }`;
 
