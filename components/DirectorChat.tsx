@@ -10,6 +10,7 @@ import { Paperclip, Send, Loader2, Sparkles, Film, Download, RefreshCw, X, Play 
 import { cn } from "@/lib/utils"
 import { PopcornSequence } from "@/types/cinema"
 import { supabase } from "@/lib/supabase"
+import { CinemaControls } from "@/components/CinemaControls"
 
 // --- Media Preview Component (Light Theme) ---
 const MediaPreview = ({ src, type, onAnimate, isAnimating }: { src: string, type: 'image' | 'video', onAnimate?: () => void, isAnimating?: boolean }) => {
@@ -414,13 +415,21 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
 
                 {/* Input Area - Floating Capsule */}
                 <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 bg-gradient-to-t from-[#F8F9FB] via-[#F8F9FB]/95 to-transparent z-40">
-                    <div className="max-w-4xl mx-auto relative">
+                    <div className="max-w-4xl mx-auto relative flex flex-col gap-3">
                         {isLoading && (
                             <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-lg rounded-full text-xs font-bold text-gray-500 animate-in fade-in slide-in-from-bottom-2">
                                 <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
                                 DIRECTOR IS THINKING...
                             </div>
                         )}
+
+                        {/* Cinema Controls Toolbar */}
+                        <div className="flex justify-center animate-in slide-in-from-bottom-2 fade-in duration-500">
+                            <CinemaControls
+                                specs={manualSpecs}
+                                onSpecChange={(k, v) => setManualSpecs((prev: any) => ({ ...prev, [k]: v }))}
+                            />
+                        </div>
 
                         <div className="relative group bg-white rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] border border-gray-200 transition-all duration-300 focus-within:ring-4 focus-within:ring-purple-500/10 focus-within:border-purple-200 pl-4 pr-2 py-2 flex items-center gap-2 hover:shadow-[0_20px_50px_-5px_rgba(124,58,237,0.15)]">
                             <label className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-purple-600 transition-colors cursor-pointer group-hover:scale-105">
