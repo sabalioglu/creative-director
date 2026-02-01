@@ -355,8 +355,8 @@ async function generateImage(prompt: string, referenceUrls?: string[]) {
     const taskId = createData.data.taskId;
     console.log("Task created with ID:", taskId);
 
-    // Step 2: Poll for Results (max 60 seconds, check every 2 seconds)
-    const maxAttempts = 30;
+    // Step 2: Poll for Results (max 300 seconds, check every 2 seconds)
+    const maxAttempts = 150;
     const pollInterval = 2000; // 2 seconds
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -389,7 +389,7 @@ async function generateImage(prompt: string, referenceUrls?: string[]) {
         // If state is 'waiting', continue polling
     }
 
-    throw new Error("Kie.ai Generation Timeout: Task did not complete within 60 seconds");
+    throw new Error("Kie.ai Generation Timeout: Task did not complete within 300 seconds");
 }
 
 async function startVideoGeneration(imageUrl: string, prompt: string) {
