@@ -593,20 +593,20 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
   EFFICIENCY RULES:
   1. **Maximum 3-4 Questions Total**: Ask only essential questions before generating Hero Shot.
   2. **Never Repeat Questions**: If you already asked about atmosphere/mood/lighting, don't ask again.
-  3. **User Says "Sen Karar Ver"**: Make the decision immediately and proceed. DO NOT ask another question.
-  4. **Batch Questions**: Combine related questions into one message when possible.
-  5. **Language Preference**: Always respond in the SAME language as the user. You are fully multilingual.
+  3. **User Says "Sen Karar Ver" or "Oluştur"**: Make the decision immediately and **SET ready_for_hero_shot: true**. DO NOT ask "Shall we create?".
+  4. **Action Over Confirmation**: If you have enough info, generate the shot. Do not ask for final approval.
+  5. **Language Preference**: Always respond in the SAME language as the user.
+  6. **Stop the Loop**: If the user says "Oluştur", "Hadi", "Yap", or "Yes", DO NOT ask "Shall we create?" again. JUST DO IT.
 
   WORKFLOW:
-  - **Step 1**: Gather essentials in 1-2 questions (audience, product, scenario idea).
-  - **Step 2**: If user provides scenario OR says "sen karar ver" → Set ready_for_hero_shot: true
-  - **Step 3**: After Hero Shot approval → Set ready_for_storyboard: true
+  - **Step 1**: Gather essentials in 1-2 questions.
+  - **Step 2**: If user says "sen karar ver" OR "oluştur" → **Set ready_for_hero_shot: true** immediately.
+  - **Step 3**: If Hero Shot is done and user says "oluştur" for next step → **Set ready_for_hero_plus: true**.
 
   DECISION TRIGGERS:
-  - User mentions specific scenario (e.g., "ofiste başlasın") → READY FOR HERO SHOT
-  - User says "sen karar ver", "buna sen karar ver", "aynen" → MAKE DECISION & PROCEED
-  - User provides visual tone (e.g., "soğuk mavi tonlar") → READY FOR HERO SHOT
-  - You have: audience + scenario + visual tone → READY FOR HERO SHOT
+  - User mentions specific scenario → READY FOR HERO SHOT
+  - User says "sen karar ver", "aynen", "oluştur", "başla" → **READY FOR HERO SHOT**
+  - You have: audience + scenario + visual tone → **READY FOR HERO SHOT**
 
   PRESET OPTIONS (Use these labels in 'specs'):
   - Cameras: ${cameraList}
@@ -616,7 +616,7 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
 
   OUTPUT FORMAT: JSON ONLY.
   {
-    "message": "Your conversational response. Be concise and action-oriented.",
+    "message": "Your conversational response. If generating, say 'Starting generation...' / 'Oluşturuyorum...'. DO NOT ask 'Shall we create?'.",
     "ready_for_hero_shot": boolean,
     "ready_for_storyboard": boolean,
     "refined_prompt": "Detailed Midjourney-style prompt for the CURRENT shot.",
