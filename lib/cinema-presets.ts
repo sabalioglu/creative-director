@@ -30,8 +30,8 @@ export const CAMERA_OPTIONS: SelectionOption[] = [
 
 // 2. LENSES (Optics & Perspective) - Refined Technical Distinction
 export const LENS_OPTIONS: SelectionOption[] = [
-    { id: 'ln-14mm', label: '14mm Ultra Wide', image: '/assets/ui/optimized/ln_14mm.jpg', description: 'Extremely wide field of view with significant spatial expansion.' },
-    { id: 'ln-24mm', label: '24mm Wide Angle', image: '/assets/ui/optimized/ln_24mm.jpg', description: 'Standard wide lens for architectural or environmental depth.' },
+    { id: 'ln-14mm', label: '14mm Ultra Wide', image: '/assets/Focal Length/14mm Ultra Wide.png', description: 'Extremely wide field of view with significant spatial expansion.' },
+    { id: 'ln-24mm', label: '24mm Wide Angle', image: '/assets/Focal Length/24mm Wide Angle.png', description: 'Standard wide lens for architectural or environmental depth.' },
     { id: 'ln-35mm', label: '35mm Standard', image: '/assets/Focal Length/35mm Standard.png', description: 'Natural perspective, legendary for storytelling and street photography.' },
     { id: 'ln-50mm', label: '50mm Normal', image: '/assets/Focal Length/50mm Normal.png', description: 'Mimics the human eye perspective with minimal distortion.' },
     { id: 'ln-85mm', label: '85mm Portrait', image: '/assets/Focal Length/85mm Portrait.png', description: 'Flattering compression, ideal for subject isolation (bokeh).' },
@@ -42,34 +42,34 @@ export const LENS_OPTIONS: SelectionOption[] = [
 
 // 3. ANGLE (Creative Perspective)
 export const CAMERA_ANGLE_OPTIONS: SelectionOption[] = [
-    { id: 'ang-eye', label: 'Eye Level', image: '/assets/ui/camera_angle_previews.png', description: 'Natural perspective, mimics human sight.' },
-    { id: 'ang-low', label: 'Low Angle', image: '/assets/ui/camera_angle_previews.png', description: 'Shot from below, makes subject look heroic.' },
-    { id: 'ang-high', label: 'High Angle', image: '/assets/ui/camera_angle_previews.png', description: 'Shot from above, emphasizing vulnerability.' },
-    { id: 'ang-bird', label: 'Bird\'s Eye View', image: '/assets/ui/camera_angle_previews.png', description: 'Directly overhead for layout clarity.' },
-    { id: 'ang-worm', label: 'Worm\'s Eye View', image: '/assets/ui/camera_angle_previews.png', description: 'Extreme low perspective from the ground.' },
-    { id: 'ang-dutch', label: 'Dutch Angle', image: '/assets/ui/camera_angle_previews.png', description: 'Tilted horizon to create unease.' },
-    { id: 'ang-pov', label: 'POV', image: '/assets/ui/camera_angle_previews.png', description: 'Seeing through the eyes of a character.' },
+    { id: 'ang-eye', label: 'Eye Level', image: '/assets/ui/angle_eye_level.png', description: 'Natural perspective, mimics human sight.' },
+    { id: 'ang-low', label: 'Low Angle', image: '/assets/ui/angle_low_angle.png', description: 'Shot from below, makes subject look heroic.' },
+    { id: 'ang-high', label: 'High Angle', image: '/assets/ui/angle_high_angle.png', description: 'Shot from above, emphasizing vulnerability.' },
+    { id: 'ang-bird', label: 'Bird\'s Eye View', image: '/assets/ui/ang_bird.png', description: 'Directly overhead for layout clarity.' },
+    { id: 'ang-worm', label: 'Worm\'s Eye View', image: '/assets/ui/ang_worm.png', description: 'Extreme low perspective from the ground.' },
+    { id: 'ang-dutch', label: 'Dutch Angle', image: '/assets/ui/ang_dutch.png', description: 'Tilted horizon to create unease.' },
+    { id: 'ang-pov', label: 'POV', image: '/assets/ui/ang_pov.png', description: 'Seeing through the eyes of a character.' },
 ];
 
 // 4. FRAMING (Compositional Scope)
 export const SHOT_FRAMING_OPTIONS: SelectionOption[] = [
-    { id: 'frm-ecu', label: 'Extreme Close Up', image: '/assets/ui/shot_framing_previews.png', description: 'Focus on minute details like eyes.' },
-    { id: 'frm-cu', label: 'Close Up', image: '/assets/ui/shot_framing_previews.png', description: 'Face/Subject focus for intimacy.' },
-    { id: 'frm-ms', label: 'Medium Shot', image: '/assets/ui/shot_framing_previews.png', description: 'Standard compositional framing.' },
-    { id: 'frm-cowboy', label: 'Cowboy Shot', image: '/assets/ui/shot_framing_previews.png', description: 'Mid-thigh up, heroic framing.' },
-    { id: 'frm-ws', label: 'Wide Shot', image: '/assets/ui/shot_framing_previews.png', description: 'Subject within their environment.' },
-    { id: 'frm-ews', label: 'Extreme Wide Shot', image: '/assets/ui/shot_framing_previews.png', description: 'Large scale landscape composition.' },
+    { id: 'frm-ecu', label: 'Extreme Close Up', image: '/assets/ui/framing_ecu.png', description: 'Focus on minute details like eyes.' },
+    { id: 'frm-cu', label: 'Close Up', image: '/assets/ui/frm_cu.png', description: 'Face/Subject focus for intimacy.' },
+    { id: 'frm-ms', label: 'Medium Shot', image: '/assets/ui/frm_ms.png', description: 'Standard compositional framing.' },
+    { id: 'frm-cowboy', label: 'Cowboy Shot', image: '/assets/ui/frm_cowboy.png', description: 'Mid-thigh up, heroic framing.' },
+    { id: 'frm-ws', label: 'Wide Shot', image: '/assets/ui/frm_ws.png', description: 'Subject within their environment.' },
+    { id: 'frm-ews', label: 'Extreme Wide Shot', image: '/assets/ui/frm_ews.png', description: 'Large scale landscape composition.' },
 ];
 
 // 5. LIGHTING (Atmosphere & Source)
 export const LIGHTING_OPTIONS: SelectionOption[] = [
-    { id: 'lgt-natural', label: 'Natural Light', image: '/assets/ui/lighting_source_previews.png', description: 'Authentic ambient illumination.' },
-    { id: 'lgt-golden', label: 'Golden Hour', image: '/assets/ui/lighting_source_previews.png', description: 'Warm sunset glow for aesthetics.' },
-    { id: 'lgt-blue', label: 'Blue Hour', image: '/assets/ui/lighting_source_previews.png', description: 'Cool twilight atmospheric light.' },
-    { id: 'lgt-noon', label: 'Hard Noon Light', image: '/assets/ui/lighting_source_previews.png', description: 'Harsh shadows and high contrast.' },
-    { id: 'lgt-studio', label: 'Studio Lighting', image: '/assets/ui/lighting_source_previews.png', description: 'Professional, controlled setup.' },
+    { id: 'lgt-natural', label: 'Natural Light', image: '/assets/ui/lighting_natural.png', description: 'Authentic ambient illumination.' },
+    { id: 'lgt-golden', label: 'Golden Hour', image: '/assets/ui/lighting_golden.png', description: 'Warm sunset glow for aesthetics.' },
+    { id: 'lgt-blue', label: 'Blue Hour', image: '/assets/ui/lighting_blue.png', description: 'Cool twilight atmospheric light.' },
+    { id: 'lgt-noon', label: 'Hard Noon Light', image: '/assets/ui/lighting_noon.png', description: 'Harsh shadows and high contrast.' },
+    { id: 'lgt-studio', label: 'Studio Lighting', image: '/assets/ui/lighting_studio.png', description: 'Professional, controlled setup.' },
     { id: 'lgt-neon', label: 'Cyberpunk Neon', image: '/assets/ui/lighting_neon.png', description: 'Electric, vibrant nightlife colors.' },
-    { id: 'lgt-softbox', label: 'Softbox', image: '/assets/ui/lighting_source_previews.png', description: 'Soft, flattering diffused source.' },
+    { id: 'lgt-softbox', label: 'Softbox', image: '/assets/ui/lighting_softbox.png', description: 'Soft, flattering diffused source.' },
     { id: 'lgt-cinematic', label: 'Dramatic Cinematic', image: '/assets/ui/lighting_cinematic.png', description: 'High contrast mood lighting.' },
 ];
 
