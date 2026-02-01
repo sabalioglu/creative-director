@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Plus, Clapperboard, Sparkles, Clock, ArrowRight } from "lucide-react"
+import { Plus, Clapperboard, Sparkles, Clock, LayoutGrid, Zap } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
@@ -56,86 +56,121 @@ export default function CinemaDashboardClient() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-            {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-purple-900/20 to-transparent pointer-events-none" />
+        <div className="min-h-screen bg-[#F8F9FB] relative overflow-hidden font-sans text-[#1A1A1A]">
+            {/* Studio Glow Effect */}
+            <div className="fixed inset-0 pointer-events-none border-[30px] border-blue-500/5 blur-[100px] z-0" />
 
             {/* Header */}
             <div className="relative z-10 px-8 py-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-900/20">
-                        <Clapperboard className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+                        <LayoutGrid className="w-5 h-5 text-purple-600" />
                     </div>
-                    <h1 className="text-xl font-bold tracking-tight text-white">My Studio</h1>
+                    <div>
+                        <h1 className="text-xl font-extrabold tracking-tight text-[#1A1A1A]">My Studio</h1>
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Agentized Creative</p>
+                    </div>
                 </div>
                 {credits !== null && (
-                    <div className="px-4 py-1.5 rounded-full bg-zinc-900/50 border border-white/5 backdrop-blur-md flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-                        <span className="text-sm font-medium text-zinc-300">{credits} Credits</span>
+                    <div className="px-4 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 text-[#D4FF00] fill-current drop-shadow-sm" />
+                        <span className="text-sm font-bold text-gray-700">{credits} Credits</span>
                     </div>
                 )}
             </div>
 
-            <div className="relative z-10 max-w-7xl mx-auto px-8 py-12 space-y-16">
+            <div className="relative z-10 max-w-7xl mx-auto px-8 py-8 space-y-12">
 
-                {/* Hero Section */}
-                <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center group cursor-pointer border border-white/5 shadow-2xl" onClick={() => router.push('/cinema/new')}>
-                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2525&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
+                {/* Hero / Action Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div
+                        onClick={() => router.push('/cinema/new')}
+                        className="col-span-2 relative rounded-[1.5rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] p-10 cursor-pointer group transition-all duration-300 hover:shadow-[0_30px_60px_-15px_rgba(124,58,237,0.15)] hover:border-purple-100"
+                    >
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-100 to-blue-50 rounded-full blur-3xl opacity-50 translate-x-1/3 -translate-y-1/3 group-hover:scale-110 transition-transform duration-700" />
 
-                    <div className="relative z-10 p-12 max-w-2xl">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600 rounded-full text-xs font-bold uppercase tracking-wider text-white mb-6 animate-in fade-in slide-in-from-left-4 duration-700">
-                            <Sparkles className="w-3 h-3" /> New Production
+                        <div className="relative z-10 max-w-lg">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-100 text-purple-600 rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+                                <Sparkles className="w-3 h-3" /> New Production
+                            </div>
+                            <h2 className="text-4xl font-extrabold text-[#1A1A1A] mb-4 leading-tight">
+                                Start a new <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">masterpiece</span>.
+                            </h2>
+                            <p className="text-lg text-gray-500 mb-8 font-medium">
+                                Direct your next commercial with our AI-powered studio tools.
+                            </p>
+                            <Button size="lg" className="h-12 px-8 rounded-xl bg-[#1A1A1A] text-white hover:bg-black font-bold text-sm shadow-xl shadow-gray-200/50 transition-all group-hover:scale-105 active:scale-95">
+                                <Plus className="w-4 h-4 mr-2" /> CREATE PROJECT
+                            </Button>
                         </div>
-                        <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tight drop-shadow-lg">
-                            Create Your Next <br />Masterpiece.
-                        </h2>
-                        <p className="text-lg text-zinc-300 mb-8 max-w-md leading-relaxed">
-                            Use AI Director to conceptualize, storyboard, and visualize cinematic commercials in minutes.
-                        </p>
-                        <Button size="lg" className="h-14 px-8 rounded-full bg-white text-black hover:bg-zinc-200 font-bold text-base shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all active:scale-95">
-                            <Plus className="w-5 h-5 mr-2" /> Start New Project
-                        </Button>
+                    </div>
+
+                    <div className="rounded-[1.5rem] bg-gradient-to-br from-purple-600 to-indigo-600 p-10 text-white flex flex-col justify-between shadow-xl shadow-purple-500/20 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] mix-blend-overlay opacity-20 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" />
+                        <div className="relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-6">
+                                <Clapperboard className="w-6 h-6 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-2">Tutorials</h3>
+                            <p className="text-purple-100 text-sm font-medium leading-relaxed">
+                                Learn how to get the most out of the Director's toolkit with our guides.
+                            </p>
+                        </div>
+                        <div className="relative z-10 mt-6">
+                            <span className="text-xs font-bold uppercase tracking-widest text-[#D4FF00] flex items-center gap-2 group-hover:gap-3 transition-all">
+                                Watch Now <ArrowRight className="w-3 h-3" />
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Projects List */}
                 <div className="space-y-6">
-                    <h3 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                        Recent Productions
-                        <span className="text-sm font-normal text-zinc-500 ml-2">({projects.length})</span>
-                    </h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-[#1A1A1A] flex items-center gap-2">
+                            Recent Productions
+                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold">{projects.length}</span>
+                        </h3>
+                    </div>
 
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="h-64 rounded-xl bg-zinc-900/50 animate-pulse" />
+                                <div key={i} className="h-64 rounded-2xl bg-gray-100 animate-pulse" />
                             ))}
                         </div>
                     ) : projects.length === 0 ? (
-                        <div className="text-center py-20 bg-zinc-900/20 rounded-2xl border border-white/5 border-dashed">
-                            <p className="text-zinc-500 mb-4">No productions found in your studio.</p>
-                            <Button variant="outline" onClick={() => router.push('/cinema/new')}>Create First Project</Button>
+                        <div className="text-center py-24 bg-white rounded-[1.5rem] border border-gray-100 border-dashed">
+                            <p className="text-gray-400 font-medium mb-4">No productions found in your studio.</p>
+                            <Button variant="outline" onClick={() => router.push('/cinema/new')} className="rounded-xl border-gray-200">Create First Project</Button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {projects.map((project) => (
                                 <Link href={`/cinema/editor/${project.id}`} key={project.id} className="group relative block">
-                                    <Card className="h-full bg-zinc-900/40 border-white/5 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-900/10 hover:-translate-y-1">
-                                        <div className="aspect-video bg-zinc-900 relative">
-                                            {/* Placeholder for project thumbnail - could be generated hero shot later */}
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/20 to-zinc-900 flex items-center justify-center text-zinc-800">
-                                                <Clapperboard className="w-12 h-12 opacity-20" />
+                                    <Card className="h-full bg-white border-gray-100 rounded-[1.25rem] overflow-hidden transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/5 hover:-translate-y-1">
+                                        <div className="aspect-video bg-gray-50 relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
+                                            {/* Placeholder for project thumbnail */}
+                                            <div className="absolute inset-0 bg-gray-50 flex items-center justify-center text-gray-200">
+                                                <Clapperboard className="w-12 h-12 opacity-50" />
                                             </div>
-                                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 to-transparent pt-12">
-                                                <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
+                                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900/50 to-transparent pt-12 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-white text-xs font-bold flex items-center gap-1">
+                                                    Resume <ArrowRight className="w-3 h-3" />
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="p-5">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                                                     <Clock className="w-3 h-3" />
                                                     {new Date(project.created_at).toLocaleDateString()}
                                                 </div>
-                                                <h4 className="font-bold text-lg text-white truncate group-hover:text-purple-300 transition-colors">
-                                                    {project.name}
-                                                </h4>
+                                                <div className="w-2 h-2 rounded-full bg-green-500" />
                                             </div>
+                                            <h4 className="font-bold text-lg text-[#1A1A1A] truncate group-hover:text-purple-600 transition-colors">
+                                                {project.name}
+                                            </h4>
                                         </div>
                                     </Card>
                                 </Link>
@@ -145,5 +180,25 @@ export default function CinemaDashboardClient() {
                 </div>
             </div>
         </div>
+    )
+}
+
+function ArrowRight(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+        </svg>
     )
 }
