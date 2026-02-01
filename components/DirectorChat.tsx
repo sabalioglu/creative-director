@@ -86,6 +86,60 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     const [isAnimating, setIsAnimating] = useState<string | null>(null) // ID of message animating
     const [recentPrompt, setRecentPrompt] = useState("")
 
+    // Real-time Image Generation State
+    const [sessionId, setSessionId] = useState<string | null>(null)
+    const [generatingImages, setGeneratingImages] = useState<{
+        hero_shot?: 'pending' | 'processing' | 'success' | 'failed';
+        hero_plus_start?: 'pending' | 'processing' | 'success' | 'failed';
+        hero_plus_end?: 'pending' | 'processing' | 'success' | 'failed';
+    }>({})
+    const [generatedImages, setGeneratedImages] = useState<{
+        hero_shot?: string;
+        hero_plus_start?: string;
+        hero_plus_end?: string;
+    }>({})
+
+    // Subscribe to Realtime Updates
+    useEffect(() => {
+        if (!sessionId) return;
+
+        console.log("Subscribing to image updates for session:", sessionId);
+        const channel = supabase
+            .channel('image-generation')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'image_generation_tasks',
+                    filter: `session_id=eq.${sessionId}`
+                },
+                (payload) => {
+                    const task = payload.new as any;
+                    console.log("Realtime update:", task.task_type, task.status);
+
+                    // Update status
+                    setGeneratingImages(prev => ({
+                        ...prev,
+                        [task.task_type]: task.status
+                    }));
+
+                    // Update image URL if success
+                    if (task.status === 'success' && task.image_url) {
+                        setGeneratedImages(prev => ({
+                            ...prev,
+                            [task.task_type]: task.image_url
+                        }));
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [sessionId]);
+
     // Console & Generation Settings
     const [genSettings, setGenSettings] = useState({
         aspectRatio: '16:9',
@@ -119,22 +173,18 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     }
 
     const handleSendMessage = async () => {
-        if ((!input.trim() && uploadedImages.length === 0) || isLoading) return
+        if (!input.trim() && uploadedImages.length === 0) return
 
-        const userMsg = {
-            role: 'user',
-            content: input,
-            id: crypto.randomUUID(),
-            type: uploadedImages.length > 0 ? 'image' : 'text',
-            mediaUrls: uploadedImages.length > 0 ? uploadedImages : undefined
-        }
-        setMessages(prev => [...prev, userMsg])
+        const currentSessionId = sessionId || crypto.randomUUID();
+        if (!sessionId) setSessionId(currentSessionId);
+
+        const newUserMsg = { role: 'user', content: input, id: crypto.randomUUID(), mediaUrls: uploadedImages }
+        setMessages(prev => [...prev, newUserMsg])
         setInput("")
         setRecentPrompt(input)
         setIsLoading(true)
 
         try {
-            let finalPrompt = input;
             let storyboardInfo = null;
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
@@ -145,8 +195,9 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                 },
                 body: JSON.stringify({
                     action: "chat",
-                    prompt: finalPrompt,
-                    image_urls: uploadedImages.length > 0 ? uploadedImages : undefined,
+                    prompt: input,
+                    image_urls: uploadedImages,
+                    sessionId: currentSessionId, // Send session ID
                     history: messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : m.content?.message })),
                     specs: manualSpecs,
                     settings: genSettings
@@ -200,6 +251,9 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         const effectivePrompt = prompt || [...messages].reverse().find(m => m.role === 'user')?.content || "Cinematic product shot";
 
         try {
+            const currentSessionId = sessionId || crypto.randomUUID();
+            if (!sessionId) setSessionId(currentSessionId);
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
                 method: "POST",
                 headers: {
@@ -210,7 +264,8 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                     action: "generate_preview",
                     prompt: effectivePrompt,
                     specs: specs,
-                    settings: genSettings
+                    settings: genSettings,
+                    sessionId: currentSessionId
                 })
             });
 
@@ -374,42 +429,83 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                     {/* Render Text */}
                                     <div className="whitespace-pre-wrap">{msg.content}</div>
 
-                                    {/* Hero Shot Display */}
-                                    {msg.role === 'assistant' && typeof msg.content === 'object' && (msg.content as any).hero_shot_url && (
-                                        <div className="mt-4">
-                                            <p className="text-sm font-semibold mb-2 text-gray-700">Hero Shot (Karakter/Mekan)</p>
-                                            <img
-                                                src={(msg.content as any).hero_shot_url}
-                                                alt="Hero Shot"
-                                                className="rounded-lg border border-gray-200 shadow-md w-full"
-                                            />
-                                        </div>
-                                    )}
+                                    {/* Hero Shot Display & Progress */}
+                                    {(
+                                        ((msg.content as any).hero_shot_url) ||
+                                        (msg.role === 'assistant' && generatingImages.hero_shot === 'processing' && (msg === messages[messages.length - 1]))
+                                    ) && (
+                                            <div className="mt-4">
+                                                <p className="text-sm font-semibold mb-2 text-gray-700">Hero Shot (Karakter/Mekan)</p>
 
-                                    {/* Hero+ Frames Display */}
-                                    {msg.role === 'assistant' && typeof msg.content === 'object' && (msg.content as any).hero_plus_frames && (
-                                        <div className="mt-4">
-                                            <p className="text-sm font-semibold mb-3 text-gray-700">Hero+ Shot (Start & End Frames)</p>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <p className="text-xs font-medium mb-2 text-gray-500">Start Frame</p>
+                                                {generatingImages.hero_shot === 'processing' && !(msg.content as any).hero_shot_url ? (
+                                                    <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
+                                                        <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-2" />
+                                                        <p className="text-sm text-purple-700 font-medium">Oluşturuluyor...</p>
+                                                        <p className="text-xs text-purple-500">Karakter ve atmosfer tasarlanıyor</p>
+                                                    </div>
+                                                ) : (
                                                     <img
-                                                        src={(msg.content as any).hero_plus_frames.start}
-                                                        alt="Start Frame"
-                                                        className="rounded-lg border border-gray-200 shadow-md w-full"
+                                                        src={(msg.content as any).hero_shot_url || generatedImages.hero_shot}
+                                                        alt="Hero Shot"
+                                                        className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
                                                     />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-medium mb-2 text-gray-500">End Frame</p>
-                                                    <img
-                                                        src={(msg.content as any).hero_plus_frames.end}
-                                                        alt="End Frame"
-                                                        className="rounded-lg border border-gray-200 shadow-md w-full"
-                                                    />
+                                                )}
+
+                                                {generatingImages.hero_shot === 'failed' && (
+                                                    <div className="w-full p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm flex items-center gap-2">
+                                                        <X className="w-4 h-4" />
+                                                        Hero Shot oluşturulamadı.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                    {/* Hero+ Frames Display & Progress */}
+                                    {(
+                                        ((msg.content as any).hero_plus_frames) ||
+                                        (msg.role === 'assistant' && (generatingImages.hero_plus_start === 'processing' || generatingImages.hero_plus_end === 'processing') && (msg === messages[messages.length - 1]))
+                                    ) && (
+                                            <div className="mt-4">
+                                                <p className="text-sm font-semibold mb-3 text-gray-700">Hero+ Shot (Start & End Frames)</p>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    {/* Start Frame */}
+                                                    <div>
+                                                        <p className="text-xs font-medium mb-2 text-gray-500">Start Frame</p>
+
+                                                        {generatingImages.hero_plus_start === 'processing' && !((msg.content as any).hero_plus_frames?.start) ? (
+                                                            <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
+                                                                <Loader2 className="w-6 h-6 text-purple-600 animate-spin mb-1" />
+                                                                <p className="text-xs text-purple-600">Oluşturuluyor...</p>
+                                                            </div>
+                                                        ) : (
+                                                            <img
+                                                                src={(msg.content as any).hero_plus_frames?.start || generatedImages.hero_plus_start}
+                                                                alt="Start Frame"
+                                                                className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
+                                                            />
+                                                        )}
+                                                    </div>
+
+                                                    {/* End Frame */}
+                                                    <div>
+                                                        <p className="text-xs font-medium mb-2 text-gray-500">End Frame</p>
+
+                                                        {generatingImages.hero_plus_end === 'processing' && !((msg.content as any).hero_plus_frames?.end) ? (
+                                                            <div className="w-full aspect-video bg-purple-50 rounded-lg flex flex-col items-center justify-center border border-purple-100">
+                                                                <Loader2 className="w-6 h-6 text-purple-600 animate-spin mb-1" />
+                                                                <p className="text-xs text-purple-600">Oluşturuluyor...</p>
+                                                            </div>
+                                                        ) : (
+                                                            <img
+                                                                src={(msg.content as any).hero_plus_frames?.end || generatedImages.hero_plus_end}
+                                                                alt="End Frame"
+                                                                className="rounded-lg border border-gray-200 shadow-md w-full animate-in fade-in duration-500"
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
                                     {/* Render Media Preview if User Uploaded */}
                                     {msg.type === 'image' && msg.mediaUrls && (

@@ -1,8 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { CAMERA_OPTIONS, LENS_OPTIONS, LIGHTING_OPTIONS, MOVIE_LOOK_OPTIONS, AUDIENCE_OPTIONS } from "../_shared/cinema-presets.ts";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.1.3";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // Configuration
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
+
+// Initialize Supabase client for Realtime updates
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -60,7 +67,9 @@ Deno.serve(async (req) => {
         // ACTION 3: CHAT (Collaborative Director)
         // -------------------------------------------------------------------------
         if (action === "chat") {
+            const sessionId = reqBody.sessionId || crypto.randomUUID(); // Use provided session or create new
             const reply = await chatWithDirector(history || [], prompt || "", image_urls, reqBody.specs, reqBody.settings);
+            reply.content.sessionId = sessionId; // Return session ID to frontend
             const videoAnalysis = reqBody.settings?.videoAnalysis;
 
             // STAGE 1: HERO SHOT (Character/Scene Only)
@@ -69,7 +78,7 @@ Deno.serve(async (req) => {
                 try {
                     // Generate character and scene WITHOUT product
                     const heroPrompt = reply.content.refined_prompt;
-                    const heroImageUrl = await generateImage(heroPrompt);
+                    const heroImageUrl = await generateImage(heroPrompt, undefined, sessionId, 'hero_shot');
 
                     reply.content.hero_shot_url = heroImageUrl;
                     reply.content.message += `\n\n✨ Karakter ve mekan oluşturuldu! Ürünle birlikte sahneleri oluşturalım mı?`;
@@ -90,11 +99,11 @@ Deno.serve(async (req) => {
 
                     // Generate Start Frame (beginning action with product)
                     const startPrompt = `${basePrompt}, character beginning to interact with product, cinematic start frame, dynamic composition`;
-                    const startFrameUrl = await generateImage(startPrompt, [heroShotUrl, productImageUrl]);
+                    const startFrameUrl = await generateImage(startPrompt, [heroShotUrl, productImageUrl], sessionId, 'hero_plus_start');
 
                     // Generate End Frame (completed action with product)
                     const endPrompt = `${basePrompt}, character fully engaged with product, satisfied expression, cinematic end frame, polished composition`;
-                    const endFrameUrl = await generateImage(endPrompt, [heroShotUrl, productImageUrl]);
+                    const endFrameUrl = await generateImage(endPrompt, [heroShotUrl, productImageUrl], sessionId, 'hero_plus_end');
 
                     reply.content.hero_plus_frames = {
                         start: startFrameUrl,
@@ -132,12 +141,13 @@ Deno.serve(async (req) => {
         // ACTION 4: GENERATE PREVIEW (Image)
         // -------------------------------------------------------------------------
         if (action === "generate_preview") {
+            const sessionId = reqBody.sessionId || crypto.randomUUID();
             // 1. Refine prompt for Nano Banana Pro
             const refinedPrompt = await refineImagePrompt(prompt || "", reqBody.specs);
             // 2. Generate Image
-            const imageUrl = await generateImage(refinedPrompt);
+            const imageUrl = await generateImage(refinedPrompt, undefined, sessionId, 'preview_shot');
 
-            return new Response(JSON.stringify({ image_url: imageUrl, refined_prompt: refinedPrompt }), {
+            return new Response(JSON.stringify({ image_url: imageUrl, refined_prompt: refinedPrompt, sessionId: sessionId }), {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
         }
@@ -318,12 +328,24 @@ async function refineImagePrompt(userPrompt: string, specs: any) {
     return await callGemini(contents, { json: false });
 }
 
-async function generateImage(prompt: string, referenceUrls?: string[]) {
+async function generateImage(prompt: string, referenceUrls?: string[], sessionId?: string, taskType?: string) {
     // Using Kie.ai Nano Banana Pro API
     const apiKey = Deno.env.get("KIE_API_KEY");
     if (!apiKey) throw new Error("KIE_API_KEY not configured");
 
-    // Step 1: Create Task
+    // Step 1: Create database record if sessionId provided
+    if (sessionId && taskType) {
+        await supabase
+            .from('image_generation_tasks')
+            .insert({
+                session_id: sessionId,
+                task_type: taskType,
+                status: 'pending'
+            });
+        console.log(`Created DB task: ${sessionId}/${taskType} - pending`);
+    }
+
+    // Step 2: Create Kie.ai Task
     const createTaskBody: any = {
         model: "nano-banana-pro",
         input: {
@@ -348,6 +370,21 @@ async function generateImage(prompt: string, referenceUrls?: string[]) {
 
     if (!createResponse.ok) {
         const errorText = await createResponse.text();
+
+        // Update database with failure
+        if (sessionId && taskType) {
+            await supabase
+                .from('image_generation_tasks')
+                .update({
+                    status: 'failed',
+                    error_message: `Task creation failed: ${errorText}`,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('session_id', sessionId)
+                .eq('task_type', taskType)
+                .eq('status', 'pending');
+        }
+
         throw new Error(`Kie.ai Task Creation Failed: ${errorText}`);
     }
 
@@ -355,7 +392,22 @@ async function generateImage(prompt: string, referenceUrls?: string[]) {
     const taskId = createData.data.taskId;
     console.log("Task created with ID:", taskId);
 
-    // Step 2: Poll for Results (max 300 seconds, check every 2 seconds)
+    // Step 3: Update database with Kie.ai task ID and set to processing
+    if (sessionId && taskType) {
+        await supabase
+            .from('image_generation_tasks')
+            .update({
+                kie_task_id: taskId,
+                status: 'processing',
+                updated_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId)
+            .eq('task_type', taskType)
+            .eq('status', 'pending');
+        console.log(`Updated DB task: ${sessionId}/${taskType} - processing`);
+    }
+
+    // Step 4: Poll for Results (max 300 seconds, check every 2 seconds)
     const maxAttempts = 150;
     const pollInterval = 2000; // 2 seconds
 
@@ -382,11 +434,55 @@ async function generateImage(prompt: string, referenceUrls?: string[]) {
             const resultJson = JSON.parse(queryData.data.resultJson);
             const imageUrl = resultJson.resultUrls[0];
             console.log("Image generated successfully:", imageUrl);
+
+            // Update database with success
+            if (sessionId && taskType) {
+                await supabase
+                    .from('image_generation_tasks')
+                    .update({
+                        status: 'success',
+                        image_url: imageUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('session_id', sessionId)
+                    .eq('task_type', taskType)
+                    .eq('kie_task_id', taskId);
+                console.log(`Updated DB task: ${sessionId}/${taskType} - success`);
+            }
+
             return imageUrl;
         } else if (state === 'fail') {
+            // Update database with failure
+            if (sessionId && taskType) {
+                await supabase
+                    .from('image_generation_tasks')
+                    .update({
+                        status: 'failed',
+                        error_message: queryData.data.failMsg,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('session_id', sessionId)
+                    .eq('task_type', taskType)
+                    .eq('kie_task_id', taskId);
+            }
+
             throw new Error(`Kie.ai Generation Failed: ${queryData.data.failMsg}`);
         }
         // If state is 'waiting', continue polling
+    }
+
+    // Timeout - update database
+    if (sessionId && taskType) {
+        await supabase
+            .from('image_generation_tasks')
+            .update({
+                status: 'failed',
+                error_message: 'Timeout: Task did not complete within 300 seconds',
+                updated_at: new Date().toISOString()
+            })
+            .eq('session_id', sessionId)
+            .eq('task_type', taskType)
+            .eq('kie_task_id', taskId);
     }
 
     throw new Error("Kie.ai Generation Timeout: Task did not complete within 300 seconds");
