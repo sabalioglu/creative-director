@@ -319,42 +319,77 @@ async function refineImagePrompt(userPrompt: string, specs: any) {
 }
 
 async function generateImage(prompt: string, referenceUrls?: string[]) {
-    // Using WaveSpeed API (Nano Banana Pro)
-    // We'll use Deno.env.get("RAPIDAPI_KEY"). If not set, we might need a fallback.
-    // Assuming RAPIDAPI_KEY is available in Supabase secrets from previous user context.
-    const apiKey = Deno.env.get("RAPIDAPI_KEY");
-    if (!apiKey) throw new Error("RAPIDAPI_KEY not configured");
+    // Using Kie.ai Nano Banana Pro API
+    const apiKey = Deno.env.get("KIE_API_KEY");
+    if (!apiKey) throw new Error("KIE_API_KEY not configured");
 
-    const body: any = {
-        aspect_ratio: '16:9',
-        enable_base64_output: false,
-        enable_sync_mode: true,
-        output_format: 'png',
-        prompt: prompt,
-        resolution: '2k' // High quality for studio
+    // Step 1: Create Task
+    const createTaskBody: any = {
+        model: "nano-banana-pro",
+        input: {
+            prompt: prompt,
+            aspect_ratio: '16:9',
+            resolution: '2K',
+            output_format: 'png',
+            image_input: referenceUrls || []
+        }
     };
 
-    // Add reference images if provided (for Hero+ Shot)
-    if (referenceUrls && referenceUrls.length > 0) {
-        body.image_urls = referenceUrls;
-    }
+    console.log("Creating Kie.ai task with prompt:", prompt.substring(0, 100));
 
-    const response = await fetch('https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit', {
+    const createResponse = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
         method: 'POST',
         headers: {
-            'x-rapidapi-key': apiKey,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(createTaskBody)
     });
 
-    if (!response.ok) {
-        const txt = await response.text();
-        throw new Error(`Image Gen Failed: ${txt}`);
+    if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`Kie.ai Task Creation Failed: ${errorText}`);
     }
 
-    const data = await response.json();
-    return data.data.outputs[0];
+    const createData = await createResponse.json();
+    const taskId = createData.data.taskId;
+    console.log("Task created with ID:", taskId);
+
+    // Step 2: Poll for Results (max 60 seconds, check every 2 seconds)
+    const maxAttempts = 30;
+    const pollInterval = 2000; // 2 seconds
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+        const queryResponse = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+
+        if (!queryResponse.ok) {
+            const errorText = await queryResponse.text();
+            throw new Error(`Kie.ai Query Failed: ${errorText}`);
+        }
+
+        const queryData = await queryResponse.json();
+        const state = queryData.data.state;
+
+        console.log(`Task ${taskId} status: ${state} (attempt ${attempt + 1}/${maxAttempts})`);
+
+        if (state === 'success') {
+            const resultJson = JSON.parse(queryData.data.resultJson);
+            const imageUrl = resultJson.resultUrls[0];
+            console.log("Image generated successfully:", imageUrl);
+            return imageUrl;
+        } else if (state === 'fail') {
+            throw new Error(`Kie.ai Generation Failed: ${queryData.data.failMsg}`);
+        }
+        // If state is 'waiting', continue polling
+    }
+
+    throw new Error("Kie.ai Generation Timeout: Task did not complete within 60 seconds");
 }
 
 async function startVideoGeneration(imageUrl: string, prompt: string) {
