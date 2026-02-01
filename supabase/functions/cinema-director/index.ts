@@ -191,16 +191,32 @@ Deno.serve(async (req) => {
 
 // --- HELPER FUNCTIONS ---
 
-async function fetchImageBase64(url: string): Promise<string> {
+async function fetchImageBase64(url: string): Promise<{ data: string, mimeType: string }> {
+    // Handle Data URIs directly (e.g. from frontend file uploads)
+    if (url.startsWith("data:")) {
+        const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+            return {
+                mimeType: matches[1],
+                data: matches[2]
+            };
+        }
+    }
+
+    // Handle Remote URLs
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
     const blob = await res.blob();
     const arrayBuffer = await blob.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    return base64;
+    return {
+        data: base64,
+        mimeType: blob.type || "image/jpeg"
+    };
 }
 
 async function callGemini(contents: any[], options: { json?: boolean } = {}) {
+    // ... code truncated ...
     const model = "gemini-2.5-flash";
     const url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + GEMINI_API_KEY;
 
@@ -236,12 +252,12 @@ async function callGemini(contents: any[], options: { json?: boolean } = {}) {
 }
 
 async function analyzeImage(imageUrl: string) {
-    const base64Image = await fetchImageBase64(imageUrl);
+    const { data, mimeType } = await fetchImageBase64(imageUrl);
     const contents = [{
         role: "user",
         parts: [
             { text: "Analyze this image for a cinematic commercial. Describe: 1. Subject 2. Key visual features (colors, lighting) 3. Suitable mood/style. Return simple JSON with keys: subject, visual_features, mood." },
-            { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+            { inline_data: { mime_type: mimeType, data: data } }
         ]
     }];
     return await callGemini(contents, { json: true });
@@ -251,8 +267,12 @@ async function planSequence(prompt: string, imageUrls: string[] | undefined, sty
     const imagesParts = [];
     if (imageUrls && imageUrls.length > 0) {
         for (const url of imageUrls) {
-            const base64 = await fetchImageBase64(url);
-            imagesParts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } });
+            try {
+                const { data, mimeType } = await fetchImageBase64(url);
+                imagesParts.push({ inline_data: { mime_type: mimeType, data: data } });
+            } catch (e) {
+                console.error("Failed to load reference image", e);
+            }
         }
     }
 
@@ -551,8 +571,8 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
     if (imageUrls && imageUrls.length > 0) {
         for (const url of imageUrls) {
             try {
-                const base64 = await fetchImageBase64(url);
-                imagesParts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } });
+                const { data, mimeType } = await fetchImageBase64(url);
+                imagesParts.push({ inline_data: { mime_type: mimeType, data: data } });
             } catch (e) {
                 console.error("Failed to load image for chat", e);
             }
