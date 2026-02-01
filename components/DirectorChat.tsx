@@ -1,24 +1,20 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { Paperclip, Send, Loader2, Sparkles, Film, Download, RefreshCw, X, Play } from "lucide-react"
-import { CinemaControls } from "@/components/CinemaControls"
-import { StoryboardGrid } from "@/components/StoryboardGrid"
 import { cn } from "@/lib/utils"
 import { PopcornSequence } from "@/types/cinema"
 import { supabase } from "@/lib/supabase"
-import { toast } from "sonner"
 
-// --- Media Preview Component (Dark Theme) ---
+// --- Media Preview Component (Light Theme) ---
 const MediaPreview = ({ src, type, onAnimate, isAnimating }: { src: string, type: 'image' | 'video', onAnimate?: () => void, isAnimating?: boolean }) => {
     return (
-        <div className="mt-3 rounded-xl overflow-hidden border border-zinc-800 shadow-lg relative group bg-zinc-950/50">
+        <div className="mt-3 rounded-2xl overflow-hidden border border-gray-100 shadow-xl shadow-gray-200/50 relative group bg-white">
             {type === 'image' ? (
                 <>
                     <img src={src} alt="Preview" className="w-full h-auto object-cover" />
@@ -27,9 +23,9 @@ const MediaPreview = ({ src, type, onAnimate, isAnimating }: { src: string, type
                             <button
                                 onClick={onAnimate}
                                 disabled={isAnimating}
-                                className="bg-black/80 hover:bg-black text-white text-xs px-4 py-2 rounded-full flex items-center gap-2 border border-zinc-700 backdrop-blur-md transition-all font-medium"
+                                className="bg-white/90 hover:bg-white text-purple-600 text-xs px-4 py-2 rounded-full flex items-center gap-2 border border-purple-100 shadow-lg backdrop-blur-md transition-all font-bold"
                             >
-                                {isAnimating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Film className="w-3 h-3 text-purple-400" />}
+                                {isAnimating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Film className="w-3 h-3 text-purple-600" />}
                                 {isAnimating ? "Animating..." : "Animate"}
                             </button>
                         </div>
@@ -39,7 +35,7 @@ const MediaPreview = ({ src, type, onAnimate, isAnimating }: { src: string, type
                 <div className="relative">
                     <video src={src} controls autoPlay loop className="w-full h-auto" />
                     <div className="absolute top-2 right-2">
-                        <a href={src} download className="p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors">
+                        <a href={src} download className="p-2 bg-white/80 text-gray-900 rounded-full hover:bg-white transition-colors shadow-sm">
                             <Download className="w-4 h-4" />
                         </a>
                     </div>
@@ -70,7 +66,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     }>>([
         {
             role: 'assistant',
-            content: "Hello! I'm your AI Creative Director. Describe your cinematic vision...",
+            content: "Hello! I'm your Creative Director. Describe your vision...",
             id: 'welcome'
         }
     ])
@@ -78,12 +74,10 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [uploadedImages, setUploadedImages] = useState<string[]>([])
     const messagesEndRef = useRef<HTMLDivElement>(null)
-
-    // Missing state variables added
     const [finalPlan, setFinalPlan] = useState<any>(null)
     const [isProcessing, setIsProcessing] = useState(false)
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState<string | null>(null) // ID of message generating
-    const [isAnimating, setIsAnimating] = useState<string | null>(null) // ID of message animating
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState<string | null>(null)
+    const [isAnimating, setIsAnimating] = useState<string | null>(null)
     const [recentPrompt, setRecentPrompt] = useState("")
 
     // Real-time Image Generation State
@@ -99,47 +93,6 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         hero_plus_end?: string;
     }>({})
 
-    // Subscribe to Realtime Updates
-    useEffect(() => {
-        if (!sessionId) return;
-
-        console.log("Subscribing to image updates for session:", sessionId);
-        const channel = supabase
-            .channel('image-generation')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'image_generation_tasks',
-                    filter: `session_id=eq.${sessionId}`
-                },
-                (payload) => {
-                    const task = payload.new as any;
-                    console.log("Realtime update:", task.task_type, task.status);
-
-                    // Update status
-                    setGeneratingImages(prev => ({
-                        ...prev,
-                        [task.task_type]: task.status
-                    }));
-
-                    // Update image URL if success
-                    if (task.status === 'success' && task.image_url) {
-                        setGeneratedImages(prev => ({
-                            ...prev,
-                            [task.task_type]: task.image_url
-                        }));
-                    }
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [sessionId]);
-
     // Console & Generation Settings
     const [genSettings, setGenSettings] = useState({
         aspectRatio: '16:9',
@@ -147,13 +100,31 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         batchSize: 1
     })
 
-    // Studio State (Manual Controls)
     const [manualSpecs, setManualSpecs] = useState<any>({
         camera: "",
         lens: "",
         lighting: "",
         mood: ""
     })
+
+    useEffect(() => {
+        if (!sessionId) return;
+        const channel = supabase
+            .channel('image-generation')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'image_generation_tasks', filter: `session_id=eq.${sessionId}` },
+                (payload) => {
+                    const task = payload.new as any;
+                    setGeneratingImages(prev => ({ ...prev, [task.task_type]: task.status }));
+                    if (task.status === 'success' && task.image_url) {
+                        setGeneratedImages(prev => ({ ...prev, [task.task_type]: task.image_url }));
+                    }
+                }
+            )
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [sessionId]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -165,7 +136,6 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
 
     const handleFinalizeProject = () => {
         setIsProcessing(true)
-        // Simulate processing for now or call onFinalize
         setTimeout(() => {
             setIsProcessing(false)
             onFinalize(finalPlan || { messages })
@@ -185,8 +155,6 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         setIsLoading(true)
 
         try {
-            let storyboardInfo = null;
-
             const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
                 method: "POST",
                 headers: {
@@ -197,7 +165,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                     action: "chat",
                     prompt: input,
                     image_urls: uploadedImages,
-                    sessionId: currentSessionId, // Send session ID
+                    sessionId: currentSessionId,
                     history: messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : m.content?.message })),
                     specs: manualSpecs,
                     settings: genSettings
@@ -207,23 +175,9 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
             const data = await response.json()
             if (data.error) throw new Error(data.error)
 
-            // If AI suggests specs, update our manual controls state ONLY if not manually set?
-            // User requested manual control overrides. So let's say AI suggests, but user can change it.
-            // We'll update state to show what AI thinks, but user can click to change.
             let messageContent = data.content;
-
             if (typeof data.content === 'object') {
-                if (data.content.specs) {
-                    setManualSpecs((prev: any) => ({
-                        ...prev,
-                        ...data.content.specs
-                    }))
-                }
-                if (data.content.storyboard) {
-                    storyboardInfo = data.content.storyboard;
-                }
-                // Extract the text message to prevent React render error (Error #31)
-                // Handle both 'message' and 'response' keys as seen in logs
+                if (data.content.specs) setManualSpecs((prev: any) => ({ ...prev, ...data.content.specs }))
                 messageContent = data.content.message || data.content.response || JSON.stringify(data.content);
             }
 
@@ -231,7 +185,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                 role: 'assistant',
                 content: messageContent,
                 id: crypto.randomUUID(),
-                storyboard: storyboardInfo // Pass the AI-generated storyboard
+                storyboard: data.content.storyboard
             }])
             if (uploadedImages.length > 0) setUploadedImages([])
 
@@ -246,8 +200,6 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     const handleGeneratePreview = async (msgId: string, prompt: string, specs: any) => {
         setIsGeneratingPreview(msgId);
         setIsLoading(true)
-
-        // Find the last relevant context prompt if empty
         const effectivePrompt = prompt || [...messages].reverse().find(m => m.role === 'user')?.content || "Cinematic product shot";
 
         try {
@@ -272,16 +224,10 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
             if (!response.ok) throw new Error("Preview generation failed");
             const data = await response.json();
 
-            // Update the SPECIFIC message with the preview URL
-            setMessages(prev => prev.map(m =>
-                m.id === msgId
-                    ? { ...m, previewUrl: data.image_url, videoUrl: null }
-                    : m
-            ));
+            setMessages(prev => prev.map(m => m.id === msgId ? { ...m, previewUrl: data.image_url, videoUrl: null } : m));
 
         } catch (error) {
             console.error(error);
-            // Maybe show toast or error state on the button
         } finally {
             setIsLoading(false);
             setIsGeneratingPreview(null);
@@ -290,8 +236,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
 
     const handleAnimatePreview = async (msgId: string, imageUrl: string) => {
         setIsLoading(true);
-        setIsAnimating(msgId); // Set specific message as animating
-
+        setIsAnimating(msgId);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/cinema-director`, {
                 method: "POST",
@@ -299,10 +244,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
                 },
-                body: JSON.stringify({
-                    action: "animate_preview",
-                    image_url: imageUrl
-                })
+                body: JSON.stringify({ action: "animate_preview", image_url: imageUrl })
             });
 
             if (!response.ok) throw new Error("Animation start failed");
@@ -317,41 +259,26 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
                         },
-                        body: JSON.stringify({
-                            action: "check_status",
-                            task_id: taskId
-                        })
+                        body: JSON.stringify({ action: "check_status", task_id: taskId })
                     });
                     const statusData = await statusRes.json();
-
                     if (statusData.status === 'done') {
                         clearInterval(pollInterval);
                         setIsLoading(false);
                         setIsAnimating(null);
-
-                        // Update the message with the video URL
-                        setMessages(prev => prev.map(m =>
-                            m.id === msgId
-                                ? { ...m, videoUrl: statusData.video_url, type: 'video_preview' }
-                                : m
-                        ));
-
+                        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, videoUrl: statusData.video_url, type: 'video_preview' } : m));
                     } else if (statusData.status === 'error') {
                         clearInterval(pollInterval);
                         setIsLoading(false);
                         setIsAnimating(null);
-                        throw new Error(statusData.error);
                     }
                 } catch (e) {
-                    console.error("Polling error", e);
                     clearInterval(pollInterval);
                     setIsLoading(false);
                     setIsAnimating(null);
                 }
             }, 5000);
-
         } catch (error) {
-            console.error(error);
             setIsLoading(false);
             setIsAnimating(null);
         }
@@ -362,45 +289,43 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         if (files.length > 0) {
             files.forEach(file => {
                 const reader = new FileReader()
-                reader.onloadend = () => {
-                    setUploadedImages(prev => [...prev, reader.result as string])
-                }
+                reader.onloadend = () => { setUploadedImages(prev => [...prev, reader.result as string]) }
                 reader.readAsDataURL(file)
             })
         }
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-zinc-950 font-sans selection:bg-purple-500/30">
-            {/* Header - Glassmorphism & Cinematic */}
-            <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-[#F8F9FB] font-sans selection:bg-purple-100/50">
+            {/* Header - Studio Light */}
+            <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100 bg-white/90 backdrop-blur-xl sticky top-0 z-50">
                 <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-900/40 ring-1 ring-white/10">
-                        <Sparkles className="w-5 h-5 text-white" />
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 text-white">
+                        <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="font-bold text-lg text-white tracking-tight">AI Director</h2>
-                        <p className="text-[11px] font-medium text-purple-300/80 uppercase tracking-wider">Cinematic Studio Pro</p>
+                        <h2 className="font-extrabold text-lg text-gray-900 tracking-tight">AI Director</h2>
+                        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Cinematic Studio Pro</p>
                     </div>
                 </div>
                 <div className="flex gap-3">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="hidden md:flex gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white transition-all duration-300"
+                        className="hidden md:flex gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition-all shadow-sm rounded-lg font-semibold"
                         disabled={!finalPlan}
                         onClick={handleFinalizeProject}
                     >
-                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-purple-400" /> : <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />}
+                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> : <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />}
                         {finalPlan ? "Export Project" : "Waiting for Plan..."}
                     </Button>
                 </div>
             </div>
 
-            {/* Chat Area - Immersive Dark */}
-            <div className="flex-1 overflow-hidden relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black">
-                {/* Ambient Background Glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none" />
+            {/* Chat Area - Light & Clean */}
+            <div className="flex-1 overflow-hidden relative bg-[#F8F9FB]">
+                {/* Ambient Glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[500px] bg-blue-100/50 blur-[120px] rounded-full pointer-events-none mix-blend-multiply" />
 
                 <ScrollArea className="h-full px-4 md:px-[10%] py-8">
                     <div className="max-w-5xl mx-auto flex flex-col gap-8 pb-40">
@@ -413,341 +338,121 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                 )}
                             >
                                 <Avatar className={cn(
-                                    "w-10 h-10 mt-1 border border-white/10 ring-2 ring-black",
-                                    msg.role === 'ai' ? "bg-purple-900/20" : "bg-zinc-800"
+                                    "w-10 h-10 mt-1 border border-white shadow-sm",
+                                    msg.role === 'ai' ? "bg-white" : "bg-white"
                                 )}>
                                     {msg.role === 'assistant' ? (
                                         <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-indigo-600">
                                             <Sparkles className="w-5 h-5 text-white" />
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-center w-full h-full bg-zinc-800 text-zinc-400 font-medium text-xs">YOU</div>
+                                        <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-500 font-bold text-xs ring-1 ring-gray-200">YOU</div>
                                     )}
                                 </Avatar>
 
                                 <div className={cn(
-                                    "p-6 rounded-3xl text-[15px] leading-relaxed backdrop-blur-sm border transition-all duration-300",
+                                    "p-6 rounded-3xl text-[15px] leading-relaxed transition-all duration-300 shadow-sm",
                                     msg.role === 'user'
-                                        ? "bg-zinc-800/80 text-zinc-100 rounded-tr-sm border-zinc-700/50 shadow-xl"
-                                        : "bg-white/5 text-zinc-300 border-white/5 rounded-tl-sm shadow-2xl hover:border-white/10 hover:bg-white/10"
+                                        ? "bg-white text-gray-800 rounded-tr-sm border border-gray-200 shadow-lg shadow-gray-200/50"
+                                        : "bg-white/90 backdrop-blur-sm text-gray-700 border border-purple-100 rounded-tl-sm shadow-xl shadow-purple-500/5"
                                 )}>
-                                    {/* Render Text */}
-                                    <div className="whitespace-pre-wrap font-light tracking-wide">{msg.content}</div>
+                                    <div className="whitespace-pre-wrap font-medium tracking-wide">{msg.content}</div>
 
-                                    {/* Hero Shot Display & Progress */}
-                                    {(
-                                        ((msg.content as any).hero_shot_url) ||
-                                        (msg.role === 'assistant' && generatingImages.hero_shot === 'processing' && (msg === messages[messages.length - 1]))
-                                    ) && (
-                                            <div className="mt-4">
-                                                <p className="text-sm font-semibold mb-2 text-gray-700">Hero Shot (Karakter/Mekan)</p>
-
-                                                {generatingImages.hero_shot === 'processing' && !(msg.content as any).hero_shot_url ? (
-                                                    <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20 relative overflow-hidden group">
-                                                        <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-transparent to-transparent opacity-50" />
-                                                        <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-3 relative z-10" />
-                                                        <p className="text-sm text-purple-300 font-medium relative z-10 animate-pulse">Designing Hero Shot...</p>
-                                                        <p className="text-[11px] text-zinc-500 uppercase tracking-widest mt-1">Render Engine Active</p>
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={(msg.content as any).hero_shot_url || generatedImages.hero_shot}
-                                                        alt="Hero Shot"
-                                                        className="rounded-xl border border-white/10 shadow-2xl w-full animate-in fade-in zoom-in-95 duration-700 hover:scale-[1.01] transition-transform cursor-pointer"
-                                                    />
-                                                )}
-
-                                                {generatingImages.hero_shot === 'failed' && (
-                                                    <div className="w-full p-4 bg-red-900/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3">
-                                                        <div className="p-1.5 bg-red-500/10 rounded-full">
-                                                            <X className="w-4 h-4" />
-                                                        </div>
-                                                        Hero Shot render failed. Please try again.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                    {/* Hero+ Frames Display & Progress */}
-                                    {(
-                                        ((msg.content as any).hero_plus_frames) ||
-                                        (msg.role === 'assistant' && (generatingImages.hero_plus_start === 'processing' || generatingImages.hero_plus_end === 'processing') && (msg === messages[messages.length - 1]))
-                                    ) && (
-                                            <div className="mt-4">
-                                                <p className="text-sm font-semibold mb-3 text-gray-700">Hero+ Shot (Start & End Frames)</p>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    {/* Start Frame */}
-                                                    <div>
-                                                        <p className="text-xs font-medium mb-2 text-gray-500">Start Frame</p>
-
-                                                        {generatingImages.hero_plus_start === 'processing' && !((msg.content as any).hero_plus_frames?.start) ? (
-                                                            <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20">
-                                                                <Loader2 className="w-6 h-6 text-purple-500 animate-spin mb-2" />
-                                                                <p className="text-[10px] text-purple-300/70 uppercase tracking-widest">Rendering Start</p>
-                                                            </div>
-                                                        ) : (
-                                                            <img
-                                                                src={(msg.content as any).hero_plus_frames?.start || generatedImages.hero_plus_start}
-                                                                alt="Start Frame"
-                                                                className="rounded-xl border border-white/10 shadow-lg w-full animate-in fade-in zoom-in-95 duration-700"
-                                                            />
-                                                        )}
-                                                    </div>
-
-                                                    {/* End Frame */}
-                                                    <div>
-                                                        <p className="text-xs font-medium mb-2 text-gray-500">End Frame</p>
-
-                                                        {generatingImages.hero_plus_end === 'processing' && !((msg.content as any).hero_plus_frames?.end) ? (
-                                                            <div className="w-full aspect-video bg-zinc-950/50 rounded-xl flex flex-col items-center justify-center border border-purple-500/20">
-                                                                <Loader2 className="w-6 h-6 text-purple-500 animate-spin mb-2" />
-                                                                <p className="text-[10px] text-purple-300/70 uppercase tracking-widest">Rendering End</p>
-                                                            </div>
-                                                        ) : (
-                                                            <img
-                                                                src={(msg.content as any).hero_plus_frames?.end || generatedImages.hero_plus_end}
-                                                                alt="End Frame"
-                                                                className="rounded-xl border border-white/10 shadow-lg w-full animate-in fade-in zoom-in-95 duration-700"
-                                                            />
-                                                        )}
-                                                    </div>
+                                    {/* Media Generation Status/Result */}
+                                    {((msg.role === 'assistant' && generatingImages.hero_shot === 'processing' && (msg === messages[messages.length - 1])) || (msg.content as any).hero_shot_url) && (
+                                        <div className="mt-4">
+                                            <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-400">Hero Shot</p>
+                                            {generatingImages.hero_shot === 'processing' && !(msg.content as any).hero_shot_url ? (
+                                                <div className="w-full aspect-video bg-gray-50 rounded-2xl flex flex-col items-center justify-center border border-gray-100">
+                                                    <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+                                                    <p className="text-sm text-gray-500 font-medium animate-pulse">Rendering...</p>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                    {/* Render Media Preview if User Uploaded */}
-                                    {msg.type === 'image' && msg.mediaUrls && (
-                                        <div className="mt-3 flex flex-wrap gap-2 md:max-w-xl">
-                                            {msg.mediaUrls.map((url: string, i: number) => (
-                                                <div key={i} className="w-24 h-24 rounded-lg overflow-hidden border border-white/10 shadow-sm relative group bg-zinc-900">
-                                                    <img src={url} alt={`Upload ${i}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                            ))}
+                                            ) : (
+                                                <img src={(msg.content as any).hero_shot_url} alt="Hero Shot" className="rounded-2xl border border-gray-100 shadow-lg w-full" />
+                                            )}
                                         </div>
                                     )}
 
-                                    {/* Render AI Attachments (Plan/Spec Card) */}
-                                    {msg.role === 'ai' && msg.projectPlan && (
-                                        <div className="mt-4 p-4 bg-purple-900/10 rounded-xl border border-purple-500/20 backdrop-blur-sm">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <div className="p-1.5 rounded bg-purple-500/10 text-purple-400">
-                                                    <Download className="w-3.5 h-3.5" />
-                                                </div>
-                                                <span className="font-semibold text-zinc-100 text-sm">Project Plan Generated</span>
-                                            </div>
-                                            <div className="text-xs text-zinc-400 mb-3 ml-7">
-                                                Includes visual direction, key shots, and technical specs.
-                                            </div>
-                                            <Button size="sm" className="w-full bg-white/5 text-purple-300 border border-white/10 hover:bg-white/10 hover:text-white shadow-sm transition-all ml-0">
-                                                View Full Plan
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {/* Cinema Spec Visualizer with Preview Generation */}
-                                    {/* Only show if specs exist AND at least one value is set */}
-                                    {msg.role === 'ai' && msg.specs && Object.values(msg.specs).some(v => v && v !== "") && (
+                                    {/* Specs Card */}
+                                    {msg.role === 'ai' && msg.specs && Object.values(msg.specs).some(v => v) && (
                                         <div className="mt-4 space-y-3">
-                                            {/* Spec Card */}
                                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
-                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Camera</div>
-                                                    <div className="text-zinc-200 font-medium">{msg.specs.camera}</div>
-                                                </div>
-                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
-                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Lens</div>
-                                                    <div className="text-zinc-200 font-medium">{msg.specs.lens}</div>
-                                                </div>
-                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
-                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Lighting</div>
-                                                    <div className="text-zinc-200 font-medium">{msg.specs.lighting}</div>
-                                                </div>
-                                                <div className="p-2.5 bg-zinc-900/50 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
-                                                    <div className="font-medium text-zinc-500 mb-0.5 text-[10px] uppercase tracking-wider">Mood</div>
-                                                    <div className="text-zinc-200 font-medium">{msg.specs.mood}</div>
-                                                </div>
+                                                {Object.entries(msg.specs).map(([k, v]) => (
+                                                    v && <div key={k} className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                                        <div className="font-bold text-gray-400 mb-0.5 text-[10px] uppercase">{k}</div>
+                                                        <div className="text-gray-900 font-bold">{v as string}</div>
+                                                    </div>
+                                                ))}
                                             </div>
-
-                                            {/* Action Buttons */}
                                             {!msg.previewUrl && (
                                                 <Button
                                                     onClick={() => handleGeneratePreview(msg.id!, recentPrompt, msg.specs)}
                                                     size="sm"
-                                                    className="w-full bg-gradient-to-r from-zinc-800 to-zinc-900 text-zinc-300 border border-white/5 hover:border-purple-500/50 hover:text-white hover:from-purple-900/20 hover:to-indigo-900/20 shadow-lg shadow-black/50 gap-2 transition-all duration-300"
+                                                    className="w-full bg-[#1A1A1A] text-white hover:bg-black border border-transparent shadow-lg shadow-gray-200 transition-all font-bold gap-2 rounded-xl"
                                                     disabled={isGeneratingPreview === msg.id}
                                                 >
-                                                    {isGeneratingPreview === msg.id ? (
-                                                        <>
-                                                            <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                                                            Rendering Studio Preview...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                                                            Generate Visual Preview
-                                                        </>
-                                                    )}
+                                                    {isGeneratingPreview === msg.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#D4FF00]" />}
+                                                    Generate Preview
                                                 </Button>
                                             )}
-
-                                            {/* Preview Result */}
                                             {msg.previewUrl && (
-                                                <div className="relative group rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black">
-                                                    <MediaPreview
-                                                        src={msg.previewUrl}
-                                                        type="image"
-                                                        isAnimating={isAnimating === msg.id}
-                                                        onAnimate={() => handleAnimatePreview(msg.id!, msg.previewUrl!)}
-                                                    />
-                                                </div>
+                                                <MediaPreview
+                                                    src={msg.previewUrl}
+                                                    type="image"
+                                                    isAnimating={isAnimating === msg.id}
+                                                    onAnimate={() => handleAnimatePreview(msg.id!, msg.previewUrl!)}
+                                                />
                                             )}
                                         </div>
                                     )}
-
-                                    {/* Render Storyboard Grid */}
-                                    {msg.storyboard && (
-                                        <StoryboardGrid
-                                            sequence={msg.storyboard}
-                                        />
-                                    )}
-
                                 </div>
                             </div>
                         ))}
+                        <div ref={messagesEndRef} />
                     </div>
                 </ScrollArea>
 
-
-            </div>
-
-            {/* Input Area - Light Theme */}
-            {/* Premium Prompt Console - Light Theme */}
-            <div className="p-6 bg-white border-t border-gray-100">
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-[#fcfcfc] border border-gray-200 rounded-[2rem] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-500 focus-within:shadow-[0_20px_60px_rgba(139,92,246,0.1)] focus-within:border-purple-200">
-
-                        {/* Row 1: Upload + Input */}
-                        <div className="flex gap-4 items-start mb-4">
-                            <div className="flex flex-col">
-                                <input
-                                    id="file-upload"
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    onChange={handleFileUpload}
-                                />
-                                <button
-                                    onClick={() => document.getElementById('file-upload')?.click()}
-                                    className="w-11 h-11 flex items-center justify-center rounded-2xl bg-gray-100 text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-all border border-gray-100"
-                                >
-                                    <Paperclip className="w-5 h-5" />
-                                </button>
+                {/* Input Area - Floating Capsule */}
+                <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 bg-gradient-to-t from-[#F8F9FB] via-[#F8F9FB]/95 to-transparent z-40">
+                    <div className="max-w-4xl mx-auto relative">
+                        {isLoading && (
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-lg rounded-full text-xs font-bold text-gray-500 animate-in fade-in slide-in-from-bottom-2">
+                                <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                                DIRECTOR IS THINKING...
                             </div>
+                        )}
 
-                            <div className="flex-1 flex flex-col relative min-h-[44px]">
-                                {uploadedImages.length > 0 && (
-                                    <div className="mb-3 flex flex-wrap gap-2">
-                                        {uploadedImages.map((img, idx) => (
-                                            <div key={idx} className="relative group">
-                                                <img src={img} alt={`Preview ${idx}`} className="h-16 w-16 object-cover rounded-xl border border-gray-200 shadow-sm" />
-                                                <button
-                                                    onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== idx))}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <textarea
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSendMessage();
-                                        }
-                                    }}
-                                    placeholder="Describe your cinematic vision..."
-                                    className="w-full bg-transparent resize-none outline-none text-[15px] leading-relaxed text-gray-900 placeholder-gray-400 font-medium py-2 min-h-[44px] max-h-[160px]"
-                                    rows={1}
-                                    style={{ height: 'auto' }}
-                                    onInput={(e) => {
-                                        const target = e.target as HTMLTextAreaElement;
-                                        target.style.height = 'auto';
-                                        target.style.height = `${target.scrollHeight}px`;
-                                    }}
-                                />
-                            </div>
+                        <div className="relative group bg-white rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] border border-gray-200 transition-all duration-300 focus-within:ring-4 focus-within:ring-purple-500/10 focus-within:border-purple-200 pl-4 pr-2 py-2 flex items-center gap-2 hover:shadow-[0_20px_50px_-5px_rgba(124,58,237,0.15)]">
+                            <label className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-purple-600 transition-colors cursor-pointer group-hover:scale-105">
+                                <Paperclip className="w-5 h-5" />
+                                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} multiple />
+                            </label>
+
+                            <Input
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                                placeholder="Describe your vision..."
+                                className="flex-1 border-0 bg-transparent text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 text-lg h-12 py-3 font-medium"
+                            />
+
+                            <Button
+                                onClick={handleSendMessage}
+                                disabled={!input.trim() && uploadedImages.length === 0}
+                                size="icon"
+                                className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:shadow-none"
+                            >
+                                <Send className="w-4 h-4 ml-0.5" />
+                            </Button>
                         </div>
 
-                        {/* Row 2: Controls + Generate */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
-
-                            {/* Settings Group */}
-                            <div className="flex items-center gap-4 flex-shrink-0">
-                                {/* Aspect Ratio */}
-                                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-100">
-                                    {['16:9', '9:16', '1:1'].map((ratio) => (
-                                        <button
-                                            key={ratio}
-                                            onClick={() => setGenSettings(prev => ({ ...prev, aspectRatio: ratio }))}
-                                            className={cn(
-                                                "px-2 py-1 rounded-lg text-[10px] font-black tracking-tighter transition-all",
-                                                genSettings.aspectRatio === ratio
-                                                    ? "bg-white text-purple-600 shadow-sm"
-                                                    : "text-gray-400 hover:text-gray-600"
-                                            )}
-                                        >
-                                            {ratio}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="h-6 w-px bg-gray-200" />
-                                {/* Resolution */}
-                                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-100">
-                                    {['HD', '2K', '4K'].map((res) => (
-                                        <button
-                                            key={res}
-                                            onClick={() => setGenSettings(prev => ({ ...prev, resolution: res }))}
-                                            className={cn(
-                                                "px-2 py-1 rounded-lg text-[10px] font-black tracking-tight transition-all",
-                                                genSettings.resolution === res
-                                                    ? "bg-purple-600 text-white shadow-lg shadow-purple-200"
-                                                    : "text-gray-400 hover:text-gray-600"
-                                            )}
-                                        >
-                                            {res}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="h-6 w-px bg-gray-200" />
-                            </div>
-
-                            {/* Preset Tools + Generate */}
-                            <div className="flex items-center gap-3 flex-wrap justify-end">
-                                <CinemaControls
-                                    specs={manualSpecs}
-                                    onSpecChange={(key, val) => setManualSpecs((prev: any) => ({ ...prev, [key]: val }))}
-                                    className="scale-90 origin-right"
-                                />
-
-
-
-                                <Button
-                                    onClick={handleSendMessage}
-                                    disabled={isLoading || (!input && uploadedImages.length === 0)}
-                                    className="custom-gradient-btn rounded-2xl px-6 h-10 font-bold text-xs uppercase tracking-tight active:scale-95 flex items-center gap-2"
-                                >
-                                    <span>{isLoading ? "Thinking..." : "Generate"}</span>
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                </Button>
-                            </div>
+                        <div className="mt-4 flex justify-center gap-6 text-[10px] font-black tracking-widest text-gray-400 uppercase opacity-60">
+                            <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-purple-500" /> AI Powered</span>
+                            <span className="flex items-center gap-1.5"><Film className="w-3 h-3 text-blue-500" /> Cinema Grade</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     )
 }

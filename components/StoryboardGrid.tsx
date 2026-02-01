@@ -20,10 +20,10 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
 
     if (!sequence || initialFrames.length === 0) {
         return (
-            <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-xl text-red-600 flex items-center gap-3 shadow-sm">
+            <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-2xl text-red-600 flex items-center gap-3 shadow-sm">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <div className="text-sm font-medium">
-                    Storyboard plan could not be generated. Please try confusing the AI less or refining your prompt. 🎬
+                <div className="text-sm font-bold">
+                    Unable to generate shotlist. Please retry with a clearer prompt.
                 </div>
             </div>
         )
@@ -188,22 +188,22 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
         <div className="space-y-8 mt-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xl font-black text-white flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
-                            <Sparkles className="w-5 h-5 text-indigo-400" />
+                    <h3 className="text-xl font-extrabold text-gray-900 flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg shadow-lg shadow-purple-500/20 text-white">
+                            <Sparkles className="w-5 h-5" />
                         </div>
                         Director's Shotlist
                     </h3>
-                    <p className="text-zinc-500 text-sm mt-1 ml-1">Sequence of {frames.length} cinematic frames organized into {scenes.length} scenes</p>
+                    <p className="text-gray-500 text-sm mt-1 ml-1 font-medium">Sequence of {frames.length} frames organized into {scenes.length} scenes</p>
                 </div>
                 {!frames.every(f => f.url) && (
                     <Button
                         size="sm"
                         onClick={generateAll}
                         disabled={generatingIds.length > 0 || isCreatingAnchor}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2 transition-all duration-300 active:scale-95 px-6 rounded-full shadow-lg shadow-indigo-500/20"
+                        className="bg-[#1A1A1A] hover:bg-black text-white gap-2 transition-all duration-300 active:scale-95 px-6 rounded-xl shadow-xl shadow-gray-200"
                     >
-                        {(generatingIds.length > 0 || isCreatingAnchor) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {(generatingIds.length > 0 || isCreatingAnchor) ? <Loader2 className="w-4 h-4 animate-spin text-[#D4FF00]" /> : <Sparkles className="w-4 h-4 text-[#D4FF00]" />}
                         {isCreatingAnchor ? "Locking Subject..." : generatingIds.length > 0 ? "Directing Scenes..." : "Generate Sequence"}
                     </Button>
                 )}
@@ -213,34 +213,34 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                 {scenes.map((scene, sceneIdx) => (
                     <div key={`scene-${sceneIdx}`} className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="h-px flex-1 bg-zinc-800" />
-                            <div className="px-4 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                            <div className="h-px flex-1 bg-gray-200" />
+                            <div className="px-4 py-1.5 rounded-full border border-gray-200 bg-white text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 shadow-sm">
                                 Scene {sceneIdx + 1}
                             </div>
-                            <div className="h-px flex-1 bg-zinc-800" />
+                            <div className="h-px flex-1 bg-gray-200" />
                         </div>
 
                         {scene.start.motion_description && (
                             <div className="flex justify-center">
-                                <div className="px-4 py-2 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-center gap-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                    <span className="text-xs text-indigo-300/90 font-medium italic">
+                                <div className="px-4 py-2 rounded-xl bg-purple-50 border border-purple-100 flex items-center gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
+                                    <span className="text-xs text-purple-700/90 font-bold italic">
                                         Action: {scene.start.motion_description}
                                     </span>
                                 </div>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {[scene.start, scene.end].filter(Boolean).map((frame, frameIdx) => {
                                 const f = frame!;
                                 return (
                                     <div key={`${f.frame_number}-${frameIdx}`} className="relative group">
                                         <Card className={cn(
-                                            "bg-black/40 border-white/5 backdrop-blur-xl overflow-hidden transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_30px_-5px_rgba(79,70,229,0.3)]",
-                                            generatingIds.includes(f.frame_number) && "ring-2 ring-indigo-500/50 scale-[0.98]"
+                                            "bg-white border-gray-100 overflow-hidden transition-all duration-500 hover:border-purple-200 hover:shadow-[0_20px_50px_-10px_rgba(124,58,237,0.1)] rounded-2xl",
+                                            generatingIds.includes(f.frame_number) && "ring-2 ring-purple-500/20 scale-[0.98]"
                                         )}>
-                                            <div className="aspect-video bg-zinc-950 relative flex items-center justify-center overflow-hidden">
+                                            <div className="aspect-video bg-gray-50 relative flex items-center justify-center overflow-hidden border-b border-gray-50">
                                                 {f.video_url ? (
                                                     <video
                                                         src={f.video_url}
@@ -253,11 +253,11 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 ) : f.url ? (
                                                     <img src={f.url} alt={`Frame ${f.frame_number}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                                 ) : (
-                                                    <div className="flex flex-col items-center gap-3 text-zinc-700">
+                                                    <div className="flex flex-col items-center gap-3 text-gray-400">
                                                         {generatingIds.includes(f.frame_number) ? (
                                                             <>
-                                                                <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                                                                <span className="text-[10px] uppercase tracking-[0.3em] font-black text-indigo-400/60">Capturing...</span>
+                                                                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                                                                <span className="text-[10px] uppercase tracking-[0.3em] font-black text-purple-600/60">Capturing...</span>
                                                             </>
                                                         ) : (
                                                             <>
@@ -269,24 +269,24 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 )}
 
                                                 <div className={cn(
-                                                    "absolute top-4 left-4 px-3 py-1 rounded-lg backdrop-blur-xl border border-white/5 text-[10px] font-black uppercase tracking-widest shadow-xl",
-                                                    f.is_keyframe_b ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                                                    "absolute top-4 left-4 px-3 py-1 rounded-lg backdrop-blur-xl border text-[9px] font-black uppercase tracking-widest shadow-xl",
+                                                    f.is_keyframe_b ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-white/80 text-purple-600 border-purple-100"
                                                 )}>
                                                     {f.is_keyframe_b ? "End State" : "Start State"}
                                                 </div>
 
                                                 {f.url && !f.video_url && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm">
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
                                                         <Button
                                                             size="sm"
                                                             onClick={() => handleAnimateFrame(f.frame_number, f.url!, f.description)}
                                                             disabled={animatingIds.includes(f.frame_number)}
-                                                            className="bg-white text-black hover:bg-zinc-200 rounded-full h-11 px-6 gap-3 shadow-2xl transition-all active:scale-95 font-bold"
+                                                            className="bg-[#1A1A1A] text-white hover:bg-black rounded-full h-11 px-6 gap-3 shadow-2xl transition-all active:scale-95 font-bold"
                                                         >
                                                             {animatingIds.includes(f.frame_number) ? (
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                <Loader2 className="w-4 h-4 animate-spin text-[#D4FF00]" />
                                                             ) : (
-                                                                <Play className="w-4 h-4 fill-current" />
+                                                                <Play className="w-4 h-4 fill-current text-[#D4FF00]" />
                                                             )}
                                                             {animatingIds.includes(f.frame_number) ? "Animating..." : "Animate Motion"}
                                                         </Button>
@@ -294,20 +294,20 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 )}
                                             </div>
 
-                                            <div className="p-4 space-y-3 bg-gradient-to-b from-white/5 to-transparent border-t border-white/5">
+                                            <div className="p-5 space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex gap-2">
-                                                        <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-black uppercase tracking-tighter text-indigo-300 border border-white/10">
+                                                        <span className="px-2 py-0.5 rounded-md bg-purple-50 text-[10px] font-black uppercase tracking-tighter text-purple-600 border border-purple-100">
                                                             {f.shot_type}
                                                         </span>
-                                                        <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-black uppercase tracking-widest text-zinc-500 border border-white/10">
+                                                        <span className="px-2 py-0.5 rounded-md bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-500 border border-gray-100">
                                                             {f.camera_angle}
                                                         </span>
                                                     </div>
-                                                    <span className="text-[10px] text-zinc-600 font-bold tabular-nums">#{f.frame_number}</span>
+                                                    <span className="text-[10px] text-gray-300 font-bold tabular-nums">#{f.frame_number}</span>
                                                 </div>
 
-                                                <p className="text-xs text-zinc-400 leading-relaxed min-h-[3em]">
+                                                <p className="text-sm text-gray-600 leading-relaxed font-medium min-h-[3em]">
                                                     {f.description}
                                                 </p>
                                             </div>
