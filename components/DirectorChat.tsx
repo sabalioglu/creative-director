@@ -431,6 +431,47 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                             />
                         </div>
 
+                        {/* Generation Settings (Aspect Ratio & Resolution) */}
+                        <div className="flex items-center justify-center gap-4 animate-in slide-in-from-bottom-3 fade-in duration-700">
+                            {/* Aspect Ratio */}
+                            <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
+                                {['16:9', '9:16', '1:1'].map((ratio) => (
+                                    <button
+                                        key={ratio}
+                                        onClick={() => setGenSettings(prev => ({ ...prev, aspectRatio: ratio }))}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all",
+                                            genSettings.aspectRatio === ratio
+                                                ? "bg-white text-purple-700 shadow-sm ring-1 ring-purple-100"
+                                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        {ratio}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="h-4 w-px bg-gray-200" />
+
+                            {/* Resolution */}
+                            <div className="bg-white p-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-1">
+                                {['HD', '2K', '4K'].map((res) => (
+                                    <button
+                                        key={res}
+                                        onClick={() => setGenSettings(prev => ({ ...prev, resolution: res }))}
+                                        className={cn(
+                                            "px-3 py-1.5 rounded-full text-[10px] font-bold transition-all",
+                                            genSettings.resolution === res
+                                                ? "bg-purple-600 text-white shadow-md shadow-purple-500/20"
+                                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        {res}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="relative group bg-white rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] border border-gray-200 transition-all duration-300 focus-within:ring-4 focus-within:ring-purple-500/10 focus-within:border-purple-200 pl-4 pr-2 py-2 flex items-center gap-2 hover:shadow-[0_20px_50px_-5px_rgba(124,58,237,0.15)]">
                             <label className="p-2 rounded-full hover:bg-gray-50 text-gray-400 hover:text-purple-600 transition-colors cursor-pointer group-hover:scale-105">
                                 <Paperclip className="w-5 h-5" />
