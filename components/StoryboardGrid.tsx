@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Sparkles, Image as ImageIcon, CheckCircle2, AlertCircle, Video, Play } from "lucide-react"
+import { Loader2, Sparkles, Image as ImageIcon, Video, Play, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PopcornSequence, StoryboardFrameDetails } from "@/types/cinema"
 import { supabase } from "@/lib/supabase"
@@ -14,13 +14,10 @@ interface StoryboardGridProps {
 }
 
 export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps) {
-    // Safe access to frames, handling potential structure mismatch
-    // The sequence might be the plan itself (flat) or contain a plan property
     const planData = sequence ? ((sequence as any).plan || sequence) : null;
     const initialFrames = planData?.frames || [];
     const initialBackgrounds = planData?.backgrounds || [];
 
-    // If no valid frames found, return Error UI instead of null
     if (!sequence || initialFrames.length === 0) {
         return (
             <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-xl text-red-600 flex items-center gap-3 shadow-sm">
@@ -38,7 +35,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
     const [bgUrls, setBgUrls] = useState<Record<string, string>>({})
     const [anchorImageUrl, setAnchorImageUrl] = useState<string | null>(null)
     const [isCreatingAnchor, setIsCreatingAnchor] = useState(false)
-
     const [hasStarted, setHasStarted] = useState(false)
 
     useEffect(() => {
@@ -51,7 +47,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
         if (hasStarted) return
         setHasStarted(true)
 
-        // Step 1: Create Subject/Product Anchor (Sequential)
         let currentAnchorUrl = anchorImageUrl;
         if (!currentAnchorUrl) {
             setIsCreatingAnchor(true);
@@ -75,9 +70,7 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
             }
         }
 
-        // Step 2: Generate Backgrounds (Parallel)
         const newBgUrls: Record<string, string> = { ...bgUrls }
-
         if (initialBackgrounds.length > 0) {
             await Promise.all(initialBackgrounds.map(async (bg: any) => {
                 if (newBgUrls[bg.id]) return;
@@ -95,11 +88,9 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                 }
             }))
         }
-
         setBgUrls(newBgUrls)
 
-        // Step 3: Generate Frames (Batched)
-        const PENDING_LIMIT = 2; // Focus on quality
+        const PENDING_LIMIT = 2;
         const queue = frames.filter(f => !f.url).map(f => f.frame_number);
 
         const processFrame = async (frameNum: number) => {
@@ -133,7 +124,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
             }
         };
 
-        // Batch processing
         for (let i = 0; i < queue.length; i += PENDING_LIMIT) {
             const batch = queue.slice(i, i + PENDING_LIMIT);
             await Promise.all(batch.map(id => processFrame(id)));
@@ -144,7 +134,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
 
     const handleAnimateFrame = async (frameNumber: number, imageUrl: string, visualPrompt: string) => {
         if (animatingIds.includes(frameNumber)) return;
-
         setAnimatingIds(prev => [...prev, frameNumber]);
 
         try {
@@ -171,7 +160,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
         }
     }
 
-    // Group frames into scenes (pairs) for visual grouping
     const scenes: { start: StoryboardFrameDetails, end?: StoryboardFrameDetails }[] = [];
     const usedFrameNumbers = new Set<number>();
 
@@ -191,7 +179,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                 usedFrameNumbers.add(frame.frame_number);
             }
         } else if (!usedFrameNumbers.has(frame.frame_number)) {
-            // Fallback for non-paired frames
             scenes.push({ start: frame });
             usedFrameNumbers.add(frame.frame_number);
         }
@@ -225,7 +212,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
             <div className="space-y-12">
                 {scenes.map((scene, sceneIdx) => (
                     <div key={`scene-${sceneIdx}`} className="space-y-4">
-                        {/* Scene Header */}
                         <div className="flex items-center gap-4">
                             <div className="h-px flex-1 bg-zinc-800" />
                             <div className="px-4 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
@@ -234,7 +220,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                             <div className="h-px flex-1 bg-zinc-800" />
                         </div>
 
-                        {/* Motion Description - Centered between paired frames */}
                         {scene.start.motion_description && (
                             <div className="flex justify-center">
                                 <div className="px-4 py-2 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-center gap-3">
@@ -283,7 +268,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                     </div>
                                                 )}
 
-                                                {/* Keyframe Badge */}
                                                 <div className={cn(
                                                     "absolute top-4 left-4 px-3 py-1 rounded-lg backdrop-blur-xl border border-white/5 text-[10px] font-black uppercase tracking-widest shadow-xl",
                                                     f.is_keyframe_b ? "bg-amber-500/10 text-amber-500 border-amber-500/20" : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
@@ -310,8 +294,6 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 )}
                                             </div>
 
-                                            </div>
-
                                             <div className="p-4 space-y-3 bg-gradient-to-b from-white/5 to-transparent border-t border-white/5">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex gap-2">
@@ -330,14 +312,13 @@ export function StoryboardGrid({ sequence, onFrameUpdate }: StoryboardGridProps)
                                                 </p>
                                             </div>
                                         </Card>
-                    </div>
-                );
+                                    </div>
+                                );
                             })}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
-    ))
-}
-            </div >
-        </div >
     )
 }
