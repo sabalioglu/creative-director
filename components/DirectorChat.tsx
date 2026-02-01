@@ -4,9 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
-import { Paperclip, Send, Loader2, Sparkles, Film, Download, RefreshCw, X, Play } from "lucide-react"
+import { Paperclip, Send, Loader2, Sparkles, Film, Download, RefreshCw, X, Play, LayoutGrid, History, Video } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PopcornSequence } from "@/types/cinema"
 import { supabase } from "@/lib/supabase"
@@ -50,6 +50,17 @@ interface DirectorChatProps {
     onFinalize: (data: any) => void
 }
 
+// Helper to format AI responses with basic markdown-like support
+const formatAIResponse = (text: string) => {
+    if (typeof text !== 'string') return text;
+    return text.split('\n').map((line, i) => (
+        <span key={i}>
+            {line.startsWith('**') ? <strong>{line.replace(/\*\*/g, '')}</strong> : line}
+            <br />
+        </span>
+    ));
+};
+
 export function DirectorChat({ onFinalize }: DirectorChatProps) {
     // Chat State
     const [messages, setMessages] = useState<Array<{
@@ -63,7 +74,8 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         specs?: any,
         previewUrl?: string | null,
         videoUrl?: string | null,
-        storyboard?: PopcornSequence
+        storyboard?: PopcornSequence,
+        actionResult?: any
     }>>([
         {
             role: 'assistant',
@@ -75,6 +87,7 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [uploadedImages, setUploadedImages] = useState<string[]>([])
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const scrollAreaRef = useRef<HTMLDivElement>(null)
     const [finalPlan, setFinalPlan] = useState<any>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isGeneratingPreview, setIsGeneratingPreview] = useState<string | null>(null)
