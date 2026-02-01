@@ -597,4 +597,3 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
         </div>
     );
 }
-```
