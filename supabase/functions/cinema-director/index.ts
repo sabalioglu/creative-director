@@ -63,16 +63,48 @@ Deno.serve(async (req) => {
             const reply = await chatWithDirector(history || [], prompt || "", image_urls, reqBody.specs, reqBody.settings);
             const videoAnalysis = reqBody.settings?.videoAnalysis;
 
-            // AUTO HERO SHOT TRIGGER
+            // STAGE 1: HERO SHOT (Character/Scene Only)
             if (reply.content.ready_for_hero_shot && !reply.content.hero_shot_url) {
-                console.log("Generating Hero Shot for:", reply.content.refined_prompt);
+                console.log("Generating Hero Shot (character/scene) for:", reply.content.refined_prompt);
                 try {
-                    const heroImageUrl = await generateImage(reply.content.refined_prompt);
+                    // Generate character and scene WITHOUT product
+                    const heroPrompt = reply.content.refined_prompt;
+                    const heroImageUrl = await generateImage(heroPrompt);
+
                     reply.content.hero_shot_url = heroImageUrl;
-                    reply.content.message += `\n\n✨ İşte ilk sahnenin Hero Shot'ı! Bu karakterle devam edelim mi?`;
+                    reply.content.message += `\n\n✨ Karakter ve mekan oluşturuldu! Ürünle birlikte sahneleri oluşturalım mı?`;
+                    reply.content.ready_for_hero_plus = true; // Trigger Hero+ generation
                 } catch (error) {
                     console.error("Hero Shot generation failed:", error);
-                    reply.content.message += `\n\n(Hero Shot oluşturulamadı, ancak storyboard'a geçebiliriz.)`;
+                    reply.content.message += `\n\n(Hero Shot oluşturulamadı, ancak devam edebiliriz.)`;
+                }
+            }
+
+            // STAGE 2: HERO+ SHOT (Start & End Frames with Product)
+            if (reply.content.ready_for_hero_plus && reply.content.hero_shot_url && image_urls && image_urls.length > 0) {
+                console.log("Generating Hero+ Shot (start & end frames) with product reference");
+                try {
+                    const heroShotUrl = reply.content.hero_shot_url;
+                    const productImageUrl = image_urls[0]; // User's product image
+                    const basePrompt = reply.content.refined_prompt;
+
+                    // Generate Start Frame (beginning action with product)
+                    const startPrompt = `${basePrompt}, character beginning to interact with product, cinematic start frame, dynamic composition`;
+                    const startFrameUrl = await generateImage(startPrompt, [heroShotUrl, productImageUrl]);
+
+                    // Generate End Frame (completed action with product)
+                    const endPrompt = `${basePrompt}, character fully engaged with product, satisfied expression, cinematic end frame, polished composition`;
+                    const endFrameUrl = await generateImage(endPrompt, [heroShotUrl, productImageUrl]);
+
+                    reply.content.hero_plus_frames = {
+                        start: startFrameUrl,
+                        end: endFrameUrl
+                    };
+                    reply.content.message += `\n\n🎬 Hero+ Shot oluşturuldu! Start ve End frame'leri hazır. Storyboard'a geçelim mi?`;
+                    reply.content.ready_for_storyboard = true; // Now ready for full storyboard
+                } catch (error) {
+                    console.error("Hero+ Shot generation failed:", error);
+                    reply.content.message += `\n\n(Hero+ Shot oluşturulamadı, Hero Shot ile devam edebiliriz.)`;
                 }
             }
 
@@ -286,12 +318,26 @@ async function refineImagePrompt(userPrompt: string, specs: any) {
     return await callGemini(contents, { json: false });
 }
 
-async function generateImage(prompt: string) {
+async function generateImage(prompt: string, referenceUrls?: string[]) {
     // Using WaveSpeed API (Nano Banana Pro)
     // We'll use Deno.env.get("RAPIDAPI_KEY"). If not set, we might need a fallback.
     // Assuming RAPIDAPI_KEY is available in Supabase secrets from previous user context.
     const apiKey = Deno.env.get("RAPIDAPI_KEY");
     if (!apiKey) throw new Error("RAPIDAPI_KEY not configured");
+
+    const body: any = {
+        aspect_ratio: '16:9',
+        enable_base64_output: false,
+        enable_sync_mode: true,
+        output_format: 'png',
+        prompt: prompt,
+        resolution: '2k' // High quality for studio
+    };
+
+    // Add reference images if provided (for Hero+ Shot)
+    if (referenceUrls && referenceUrls.length > 0) {
+        body.image_urls = referenceUrls;
+    }
 
     const response = await fetch('https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit', {
         method: 'POST',
@@ -299,14 +345,7 @@ async function generateImage(prompt: string) {
             'x-rapidapi-key': apiKey,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            aspect_ratio: '16:9',
-            enable_base64_output: false,
-            enable_sync_mode: true,
-            output_format: 'png',
-            prompt: prompt,
-            resolution: '2k' // High quality for studio
-        })
+        body: JSON.stringify(body)
     });
 
     if (!response.ok) {

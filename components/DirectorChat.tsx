@@ -374,6 +374,43 @@ export function DirectorChat({ onFinalize }: DirectorChatProps) {
                                     {/* Render Text */}
                                     <div className="whitespace-pre-wrap">{msg.content}</div>
 
+                                    {/* Hero Shot Display */}
+                                    {msg.role === 'assistant' && typeof msg.content === 'object' && (msg.content as any).hero_shot_url && (
+                                        <div className="mt-4">
+                                            <p className="text-sm font-semibold mb-2 text-gray-700">Hero Shot (Karakter/Mekan)</p>
+                                            <img
+                                                src={(msg.content as any).hero_shot_url}
+                                                alt="Hero Shot"
+                                                className="rounded-lg border border-gray-200 shadow-md w-full"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Hero+ Frames Display */}
+                                    {msg.role === 'assistant' && typeof msg.content === 'object' && (msg.content as any).hero_plus_frames && (
+                                        <div className="mt-4">
+                                            <p className="text-sm font-semibold mb-3 text-gray-700">Hero+ Shot (Start & End Frames)</p>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-xs font-medium mb-2 text-gray-500">Start Frame</p>
+                                                    <img
+                                                        src={(msg.content as any).hero_plus_frames.start}
+                                                        alt="Start Frame"
+                                                        className="rounded-lg border border-gray-200 shadow-md w-full"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-medium mb-2 text-gray-500">End Frame</p>
+                                                    <img
+                                                        src={(msg.content as any).hero_plus_frames.end}
+                                                        alt="End Frame"
+                                                        className="rounded-lg border border-gray-200 shadow-md w-full"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Render Media Preview if User Uploaded */}
                                     {msg.type === 'image' && msg.mediaUrls && (
                                         <div className="mt-3 flex flex-wrap gap-2 md:max-w-xl">
