@@ -392,7 +392,7 @@ async function chatWithDirector(history: any[], lastUserMessage: string, imageUr
   2. **Interrogative Approach**: Ask clarifying questions about Mood, Target Audience, or USP (Unique Selling Point). 
   3. **One Question at a Time**: Never overwhelm the user. Ask only 1 or 2 targeted questions per response.
   4. **Propose Ideas**: Suggest ad formulas like "Viral Hook", "Cinematic Journey", or "Product Hero" based on their inputs.
-  5. **Language Preference**: Use Turkish if the user speaks Turkish, English if they speak English.
+  5. **Language Preference**: Always respond in the SAME language as the user. You are fully multilingual.
   6. **Step-by-Step Workflow**:
      - Step 1: Confirm Audience/Product Goal.
      - Step 2: Define Vibe & Mood.
