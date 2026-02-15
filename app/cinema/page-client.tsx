@@ -40,13 +40,9 @@ export default function CinemaDashboardClient() {
 
     async function fetchProjects() {
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-            const { data, error } = await supabase
-                .from('cinema_projects')
-                .select('*')
-                .order('created_at', { ascending: false })
-            if (error) throw error
+            // Neon DB integration
+            const response = await fetch('/api/projects')
+            const data = await response.json()
             setProjects(data || [])
         } catch (error) {
             console.error('Error fetching projects:', error)
